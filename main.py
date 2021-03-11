@@ -126,8 +126,14 @@ def main():
                                     y = getJobOverview(base_url, job_id)
                                     print(str(y.status_code) + ", " + y.text)
 
+                                    while str(json.dumps(y.json()['vertices'][0]['metrics']['write-records-complete'], indent=4)) != "true":
+                                        y = getJobOverview(base_url, job_id)
+                                        print(str(y.status_code) + ", " + y.text)
+
                                     duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
                                     print('duration : ' + duration)
+                                    metrics = json.dumps(y.json()['vertices'], indent=4)
+
                                     records = json.dumps(y.json()['vertices'][0]['metrics']['write-records'], indent=4)
                                     print('records : ' + records)
 
