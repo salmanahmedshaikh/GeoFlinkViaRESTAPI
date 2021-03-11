@@ -65,7 +65,7 @@ def main():
     #                                  "--omegaJoinDuration", "1"],
     #              "parallelism": 30}
 
-    file = openFile()
+
 
     experimentFrequency = 3
 
@@ -134,8 +134,10 @@ def main():
                                 # Execute for 2 minutes
                                 time.sleep(60 * 2)
 
-                                job_id = json.dumps(x.json()['jobid'], indent=4)
-                                y = getJobOverview(base_url, job_id.replace('"', ''))
+                                job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
+                                y = getJobOverview(base_url, job_id)
+                                print(y.status_code)
+                                print(y.text)
 
                                 duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
                                 print('duration : ' + duration)
@@ -151,11 +153,15 @@ def main():
                                 # wait at-least 10 seconds before starting next job
                                 time.sleep(10)
 
+                            file = openFile()
+
                             file.write(queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + executionCostList + "," + numberRecordList + "\n")
                             print(queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + executionCostList + "," + numberRecordList)
 
-    file.flush()
-    file.close()
+                            file.flush()
+                            file.close()
+
+
 
 
     # "--gridMinX", "115.50000",
