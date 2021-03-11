@@ -3,7 +3,6 @@ import os
 import json
 import time
 
-
 def main():
     base_url = "http://localhost:29999/"
 
@@ -13,9 +12,9 @@ def main():
     # path = "/home/salman/Development/Flink/Projects/GeoFlinkExperiments/target/GeoFlinkProject-0.1.jar"
     # path = "/data1/development/Flink/Projects/MFEventTimeGeoFlink/target/GeoFlinkProject-0.1.jar"
     # x = uploadJar(base_url, path)
+    # jar_id = "5f78f677-110b-4057-b0a8-5bcf63c22524_GeoFlinkProject20210304.jar"
     jar_id = "55baf91f-11de-400d-95ba-84852d293c38_GeoFlinkProject20210309_2.jar"
 
-    # test
     # x = deleteJar(base_url, jar_id)
 
 
@@ -46,31 +45,60 @@ def main():
     #                      "--gPointCoordinates", "{coordinates: [-5061.771566548391,-42385.84023166007]}", "--gRows", "96", "--gColumns", "108",
     #                      "--gAngle", "0"], "parallelism": 10}
 
-    #parameters = {"programArgsList": ["--onCluster", "true",
-    #                                  "--queryOption", "27",
-    #                                  "--aggregate", "SUM",
-    #                                  "--wType", "TIME",
-    #                                  "--wInterval", "5",
-    #                                  "--wStep", "5",
-    #                                  "--uniformGridSize", 100,
-    #                                  "--k", "99",
-    #                                  "--radius", "1000",
-    #                                  "--inputTopicName", "TaxiDrive17MillionGeoJSON",
-    #                                  "--dateFormat", "yyyy-MM-dd HH:mm:ss",
-    #                                  "--dataset", "TDriveBeijing",
-    #                                  "--outputTopicName", "TDriveLatency27",
-    #                                  "--inputFormat", "GeoJSON",
-    #                                  "--queryTopicName", "ATCQueryStream",
-    #                                  "--trajDeletionThreshold", 1000,
-    #                                  "--outOfOrderAllowedLateness", "1",
-    #                                  "--omegaJoinDuration", "1"],
-    #              "parallelism": 30}
+    # parameters = {"programArgsList": ["--onCluster", "true",
+    #                                   "--queryOption", "27",
+    #                                   "--aggregate", "SUM",
+    #                                   "--wType", "TIME",
+    #                                   "--wInterval", "5",
+    #                                   "--wStep", "5",
+    #                                   "--uniformGridSize", 100,
+    #                                   "--k", "99",
+    #                                   "--radius", "1000",
+    #                                   "--inputTopicName", "TaxiDrive17MillionGeoJSON",
+    #                                   "--dateFormat", "yyyy-MM-dd HH:mm:ss",
+    #                                   "--dataset", "TDriveBeijing",
+    #                                   "--outputTopicName", "TDriveLatency27",
+    #                                   "--inputFormat", "GeoJSON",
+    #                                   "--queryTopicName", "ATCQueryStream",
+    #                                   "--trajDeletionThreshold", 1000,
+    #                                   "--outOfOrderAllowedLateness", "1",
+    #                                   "--omegaJoinDuration", "1"],
+    #               "parallelism": 30}
 
+    # TaxiDrive17MillionGeoJSON
+#    parameters = {"programArgsList": ["--onCluster", "true",
+#                                      "--approximateQuery", "false",
+#                                      "--queryOption", "12",
+#                                      "--inputTopicName", "TaxiDrive17MillionGeoJSON",
+#                                      "--queryTopicName", "sampleTopic",
+#                                      "--outputTopicName", "QueryLatency",
+#                                      "--inputFormat", "GeoJSON",
+#                                      "--dateFormat", "yyyy-MM-dd HH:mm:ss",
+#                                      "--radius", "0.04",
+#                                      "--aggregate", "SUM",
+#                                      "--wType", "TIME",
+#                                      "--wInterval", "30",
+#                                      "--wStep", "15",
+#                                      "--uniformGridSize", 100,
+#                                      "--k", "10",
+#                                      "--trajDeletionThreshold", 1000,
+#                                      "--outOfOrderAllowedLateness", "1",
+#                                      "--omegaJoinDuration", "1",
+#                                      "--gridMinX", "115.50000",
+#                                      "--gridMaxX", "117.60000",
+#                                      "--gridMinY", "39.60000",
+#                                      "--gridMaxY", "41.10000",
+#                                      "--trajIDSet", "9211800, 9320801, 9090500, 7282400, 10390100",
+#                                      "--queryPoint", "[116.14319183444924, 40.07271444145411]",
+#                                      "--queryPolygon", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762], [116.14319183444924, 40.07271444145411]",
+#                                      "--queryLineString", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"],
+#                  "parallelism": 30}
 
+    # NYCBuildingsPolygonsおよびNYCBuildingsLineStrings
     parameters = {"programArgsList": ["--onCluster", "true",
                                       "--approximateQuery", "false",
-                                      "--queryOption", "31",
-                                      "--inputTopicName", "NYCBuildingsLineStrings",
+                                      "--queryOption", "21",
+                                      "--inputTopicName", "NYCBuildingsPolygons",
                                       "--queryTopicName", "sampleTopic",
                                       "--outputTopicName", "QueryLatency",
                                       "--inputFormat", "GeoJSON",
@@ -78,8 +106,8 @@ def main():
                                       "--radius", "0.05",
                                       "--aggregate", "SUM",
                                       "--wType", "TIME",
-                                      "--wInterval", "50",
-                                      "--wStep", "15",
+                                      "--wInterval", "200",
+                                      "--wStep", "50",
                                       "--uniformGridSize", 100,
                                       "--k", "10",
                                       "--trajDeletionThreshold", 1000,
@@ -94,16 +122,6 @@ def main():
                                       "--queryPolygon", "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]",
                                       "--queryLineString", "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"],
                   "parallelism": 30}
-
-    #"--gridMinX", "115.50000",
-    #"--gridMaxX", "117.60000",
-    #"--gridMinY", "39.60000",
-    #"--gridMaxY", "41.10000",
-    #"--queryPoint", "[116.14319183444924, 40.07271444145411]",
-    #"--queryPolygon", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762], [116.14319183444924, 40.07271444145411]",
-    #"--queryLineString", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"],
-
-
 
     # parameters = {"programArgsList": ["--onCluster", "true", "--queryOption", "27", "--inputTopicName",
     #                                   "ATCShoppingMall", "--dataset", "ATCShoppingMall", "--outputTopicName",
@@ -124,18 +142,24 @@ def main():
     #x = getFlinkClusterOverview(base_url)＃
     #x = terminateJob(base_url, job_id)
 
+
     print(x.status_code)
     print(x.text)
 
-    #job_id = "fb9c48cf5d34527e2f3a437244f6e8de"
-    #x = getJobOverview(base_url, job_id)
-
     job_id = json.dumps(x.json()['jobid'], indent=4)
-    y = getJobOverview(base_url, job_id.replace('"', ''))
+    job_id = job_id.replace('"', '')
+    print('job_id : ' + job_id)
+
+    time.sleep(60 * 2)
+
+    y = getJobOverview(base_url, job_id)
     print(y.status_code)
-    print(y.text)
 
+    records = json.dumps(y.json()['vertices'][0]['metrics']['write-records'], indent=4)
+    print('records : ' + records)
 
+    z = terminateJob(base_url, job_id)
+    print(z.status_code)
 
 
 def submitJob(base_url, jar_id, parameters):
