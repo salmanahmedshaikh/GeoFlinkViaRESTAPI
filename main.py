@@ -18,7 +18,6 @@ def main():
     # test
     # x = deleteJar(base_url, jar_id)
 
-
     # --queryOption "stayTime" --inputs "{movingObjTopics: [MovingFeatures, MovingFeatures2], sensorTopics: [MovingFeatures2]}" --output "outputTopic" --queryId "Q1" --sensorRadius "0.0005" --aggregate "AVG" --cellLength "10.0" --wType "TIME" --wInterval "10" --wStep "10" --gType "Polygon" --gCoordinates "{coordinates: [[[139.7766, 35.6190], [139.7766, 35.6196], [139.7773, 35.6190],[139.7773, 35.6196], [139.7766, 35.6196]]]}"
     # parameters = {
     #     "programArgsList": ["--queryOption", "stayTime", "--inputs", "{movingObjTopics: [MovingFeatures, MovingFeatures2], sensorTopics: [MovingFeatures2]}", "--output", "output", "--queryId", "Q1", "--sensorRadius", "0.0005",
@@ -46,7 +45,7 @@ def main():
     #                      "--gPointCoordinates", "{coordinates: [-5061.771566548391,-42385.84023166007]}", "--gRows", "96", "--gColumns", "108",
     #                      "--gAngle", "0"], "parallelism": 10}
 
-    #parameters = {"programArgsList": ["--onCluster", "true",
+    # parameters = {"programArgsList": ["--onCluster", "true",
     #                                  "--queryOption", "27",
     #                                  "--aggregate", "SUM",
     #                                  "--wType", "TIME",
@@ -66,44 +65,106 @@ def main():
     #                                  "--omegaJoinDuration", "1"],
     #              "parallelism": 30}
 
+    file = openFile()
 
-    parameters = {"programArgsList": ["--onCluster", "true",
-                                      "--approximateQuery", "false",
-                                      "--queryOption", "31",
-                                      "--inputTopicName", "NYCBuildingsLineStrings",
-                                      "--queryTopicName", "sampleTopic",
-                                      "--outputTopicName", "QueryLatency",
-                                      "--inputFormat", "GeoJSON",
-                                      "--dateFormat", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-                                      "--radius", "0.05",
-                                      "--aggregate", "SUM",
-                                      "--wType", "TIME",
-                                      "--wInterval", "50",
-                                      "--wStep", "15",
-                                      "--uniformGridSize", 100,
-                                      "--k", "10",
-                                      "--trajDeletionThreshold", 1000,
-                                      "--outOfOrderAllowedLateness", "1",
-                                      "--omegaJoinDuration", "1",
-                                      "--gridMinX", "-74.25540",
-                                      "--gridMaxX", "-73.70007",
-                                      "--gridMinY", "40.49843",
-                                      "--gridMaxY", "40.91506",
-                                      "--trajIDSet", "9211800, 9320801, 9090500, 7282400, 10390100",
-                                      "--queryPoint", "[-74.0000, 40.72714]",
-                                      "--queryPolygon", "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]",
-                                      "--queryLineString", "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"],
-                  "parallelism": 30}
+    experimentFrequency = 3
 
-    #"--gridMinX", "115.50000",
-    #"--gridMaxX", "117.60000",
-    #"--gridMinY", "39.60000",
-    #"--gridMaxY", "41.10000",
-    #"--queryPoint", "[116.14319183444924, 40.07271444145411]",
-    #"--queryPolygon", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762], [116.14319183444924, 40.07271444145411]",
-    #"--queryLineString", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"],
+    dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    gridMinX = "-74.25540"
+    gridMaxX = "-73.70007"
+    gridMinY = "40.49843"
+    gridMaxY = "40.91506"
+    trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
+    queryPoint = "[-74.0000, 40.72714]"
+    queryPolygon = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]"
+    queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
+
+    inputTopicName = "TaxiDrive17MillionGeoJSON"
+    queryOptionList = ["1", "6", "11"]
+    ifApproximateQuery = ["true", "false"]
+    radiusList = ["0.0005", "0.005", "0.05", "0.5"]
+    wIntervalList = ["50", "100", "150", "200", "250"]
+    wStepList = ["25", "50", "75", "100", "125"]
+    uniformGridSizeList = ["100", "200", "300", "400", "500"]
+
+    executionCostList = []
+    numberRecordList = []
+
+    for queryOption in queryOptionList:
+        for approximateQuery in ifApproximateQuery:
+            for radius in radiusList:
+                for wInterval in wIntervalList:
+                    for wStep in wStepList:
+                        for uniformGridSize in uniformGridSizeList:
+
+                            executionCostList.clear()
+                            numberRecordList.clear()
+
+                            for i in range(experimentFrequency):
+                                parameters = {"programArgsList": ["--onCluster", "true",
+                                                                  "--approximateQuery", approximateQuery,
+                                                                  "--queryOption", queryOption,
+                                                                  "--inputTopicName", inputTopicName,
+                                                                  "--queryTopicName", "sampleTopic",
+                                                                  "--outputTopicName", "QueryLatency",
+                                                                  "--inputFormat", "GeoJSON",
+                                                                  "--dateFormat", dateFormat,
+                                                                  "--radius", radius,
+                                                                  "--aggregate", "SUM",
+                                                                  "--wType", "TIME",
+                                                                  "--wInterval", wInterval,
+                                                                  "--wStep", wStep,
+                                                                  "--uniformGridSize", uniformGridSize,
+                                                                  "--k", "10",
+                                                                  "--trajDeletionThreshold", 1000,
+                                                                  "--outOfOrderAllowedLateness", "1",
+                                                                  "--omegaJoinDuration", "1",
+                                                                  "--gridMinX", gridMinX,
+                                                                  "--gridMaxX", gridMaxX,
+                                                                  "--gridMinY", gridMinY,
+                                                                  "--gridMaxY", gridMaxY,
+                                                                  "--trajIDSet", trajIDSet,
+                                                                  "--queryPoint", queryPoint,
+                                                                  "--queryPolygon", queryPolygon,
+                                                                  "--queryLineString", queryLineString],
+                                              "parallelism": 30}
+
+                                x = submitJob(base_url, jar_id, parameters)
+
+                                # Execute for 2 minutes
+                                time.sleep(60 * 2)
+
+                                job_id = json.dumps(x.json()['jobid'], indent=4)
+                                y = getJobOverview(base_url, job_id.replace('"', ''))
+
+                                duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
+                                print('duration : ' + duration)
+                                records = json.dumps(y.json()['vertices'][0]['metrics']['write-records'], indent=4)
+                                print('records : ' + records)
+
+                                executionCostList.append(duration)
+                                numberRecordList.append(records)
+
+                                z = terminateJob(base_url, job_id)
+                                print(z.status_code)
+
+                                # wait at-least 10 seconds before starting next job
+                                time.sleep(10)
+
+                            file.write(queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + executionCostList + "," + numberRecordList + "\n")
+                            print(queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + executionCostList + "," + numberRecordList)
+
+    file.flush()
+    file.close()
 
 
+    # "--gridMinX", "115.50000",
+    # "--gridMaxX", "117.60000",
+    # "--gridMinY", "39.60000",
+    # "--gridMaxY", "41.10000",
+    # "--queryPoint", "[116.14319183444924, 40.07271444145411]",
+    # "--queryPolygon", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762], [116.14319183444924, 40.07271444145411]",
+    # "--queryLineString", "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"],
 
     # parameters = {"programArgsList": ["--onCluster", "true", "--queryOption", "27", "--inputTopicName",
     #                                   "ATCShoppingMall", "--dataset", "ATCShoppingMall", "--outputTopicName",
@@ -112,30 +173,12 @@ def main():
     #                                   "TIME", "--wInterval", "10", "--wStep", "5",
     #                                    "--uniformGridSize", "100", "--k", "99", "--radius", "2000", "--queryTopicName", "ATCQueryStream", "--trajDeletionThreshold", "1000"], "parallelism": 30}
 
-    #x = getAllJobsOverview(base_url)
+    # x = getAllJobsOverview(base_url)
 
-    #y = json.loads(x.text)
-    #for rows in y["jobs"]:
+    # y = json.loads(x.text)
+    # for rows in y["jobs"]:
     #    if rows["state"] == "RUNNING":
     #        terminateJob(base_url, rows["jid"])
-
-    x = submitJob(base_url, jar_id, parameters)
-
-    #x = getFlinkClusterOverview(base_url)＃
-    #x = terminateJob(base_url, job_id)
-
-    print(x.status_code)
-    print(x.text)
-
-    #job_id = "fb9c48cf5d34527e2f3a437244f6e8de"
-    #x = getJobOverview(base_url, job_id)
-
-    job_id = json.dumps(x.json()['jobid'], indent=4)
-    y = getJobOverview(base_url, job_id.replace('"', ''))
-    print(y.status_code)
-    print(y.text)
-
-
 
 
 def submitJob(base_url, jar_id, parameters):
@@ -165,7 +208,6 @@ def uploadJar(base_url, path):
     return x
 
 
-
 def deleteJar(base_url, jar_id):
     url = base_url + "jars/" + jar_id
     mydata = '{}'
@@ -178,6 +220,7 @@ def getAllJobsOverview(base_url):
     mydata = '{}'
     x = requests.get(url, data=mydata)
     return x
+
 
 def getJobOverview(base_url, job_id):
     url = base_url + "jobs/" + job_id
@@ -199,11 +242,47 @@ def getWebUIConfig(base_url):
     x = requests.get(url, data=mydata)
     return x
 
+
 def getFlinkClusterOverview(base_url):
     url = base_url + "overview"
     mydata = '{}'
     x = requests.get(url, data=mydata)
     return x
+
+
+def openFile():
+    file = open('qureyOutput.csv', 'w')
+    file.truncate()
+    file.close()
+    file = open('qureyOutput.csv', 'w')
+    return file
+
+
+def grades_sum(data):
+    total = 0
+    for grade in data:
+        total += grade
+    return total
+
+def grades_average(data):
+    sum_of_grades = grades_sum(data)
+    average = sum_of_grades / float(len(data))
+    return average
+
+def grades_variance(data):
+    average=grades_average(data)
+    variance=0
+    for score in data:
+        variance+=(average-score)**2
+    return variance/len(data)
+
+def grades_std_deviation(data):
+    return grades_variance(data)**0.5
+
+def calculate(data):
+    average = grades_average(data)
+    std = grades_std_deviation(data)
+    return (average, std)
 
 
 if __name__ == "__main__":
