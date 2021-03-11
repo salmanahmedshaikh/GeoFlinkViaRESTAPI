@@ -106,7 +106,7 @@ def main():
                                       "--radius", "0.05",
                                       "--aggregate", "SUM",
                                       "--wType", "TIME",
-                                      "--wInterval", "200",
+                                      "--wInterval", "250",
                                       "--wStep", "50",
                                       "--uniformGridSize", 100,
                                       "--k", "10",
@@ -155,8 +155,18 @@ def main():
     y = getJobOverview(base_url, job_id)
     print(y.status_code)
 
+    file = openTestResultFile()
+
+    duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
+    print('duration : ' + duration)
     records = json.dumps(y.json()['vertices'][0]['metrics']['write-records'], indent=4)
     print('records : ' + records)
+
+    file.write("duration,records\n")
+    file.write(duration + "," + records + "\n")
+
+    file.flush()
+    file.close()
 
     z = terminateJob(base_url, job_id)
     print(z.status_code)
@@ -236,6 +246,12 @@ def getFlinkClusterOverview(base_url):
     x = requests.get(url, data=mydata)
     return x
 
+def openTestResultFile():
+    file = open('RangeQuery.csv','w')
+    file.truncate()
+    file.close()
+    file = open('RangeQuery.csv','w')
+    return file
 
 if __name__ == "__main__":
     main()
