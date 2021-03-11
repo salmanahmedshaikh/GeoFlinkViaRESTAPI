@@ -115,14 +115,16 @@ def main():
                                                   "parallelism": 30}
 
                                     x = submitJob(base_url, jar_id, parameters)
+                                    if x.status_code == 200:
+                                        print("Job submitted: " +
+                                              queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize)
 
                                     # Execute for 2 minutes
                                     time.sleep(60 * 2)
 
                                     job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
                                     y = getJobOverview(base_url, job_id)
-                                    print(y.status_code)
-                                    print(y.text)
+                                    print(str(y.status_code) + ", " + y.text)
 
                                     duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
                                     print('duration : ' + duration)
@@ -133,8 +135,7 @@ def main():
                                     numberRecordList.append(records)
 
                                     z = terminateJob(base_url, job_id)
-                                    print(z.status_code)
-                                    print(z.text)
+                                    print(str(z.status_code) + ", " + z.text)
 
                                     # wait at-least 10 seconds before starting next job
                                     time.sleep(10)
