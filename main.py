@@ -15,6 +15,8 @@ def main():
     jar_id = "55baf91f-11de-400d-95ba-84852d293c38_GeoFlinkProject20210309_2.jar"
 
     experimentFrequency = 3
+    executionTimeSeconds = 120
+    waitBetweenExecutionsSec = 10
 
     inputTopicNameList = ["TaxiDrive17MillionGeoJSON", "NYCBuildingsPolygons", "NYCBuildingsLineStrings"]
     ifApproximateQuery = ["true", "false"]
@@ -23,10 +25,8 @@ def main():
     wStepList = ["25", "50", "75", "100", "125"]
     uniformGridSizeList = ["100", "200", "300", "400", "500"]
 
-    executionCostList = []
-    numberRecordList = []
-
-    queryOptionList = []
+    queryOptionListWindowed = []
+    queryOptionListRealtime = []
     dateFormat = ""
     gridMinX = ""
     gridMaxX = ""
@@ -37,10 +37,18 @@ def main():
     queryPolygon = ""
     queryLineString = ""
 
-    for inputTopicName in inputTopicNameList:
+    file = openFile()
 
+    file.write(
+        "queryOption" + "," + "approximateQuery" + "," + "inputTopicName" + "," + "radius" + "," + "wInterval" + "," + "wStep" + "," + "uniformGridSize" + "," + "executionCost1, executionCost2, executionCost3" + "," + "avg_time_sec" + ", " + "numberRecords1, numberRecords2, numberRecords3" + "avg_records" + ", " + "throughput" + "\n")
+
+    file.flush()
+    file.close()
+
+    for inputTopicName in inputTopicNameList:
         if inputTopicName == "TaxiDrive17MillionGeoJSON":
-            queryOptionList = ["1", "6", "11"]
+            queryOptionListWindowed = ["1", "6", "11"]
+            queryOptionListRealtime = ["2", "7", "12"]
             dateFormat = "yyyy-MM-dd HH:mm:ss"
             gridMinX = "115.50000"
             gridMaxX = "117.60000"
@@ -52,7 +60,8 @@ def main():
             queryLineString = "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"
 
         elif inputTopicName == "NYCBuildingsPolygons":
-            queryOptionList = ["16", "21", "26"]
+            queryOptionListWindowed = ["16", "21", "26"]
+            queryOptionListRealtime = ["17", "22", "27"]
             dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
             gridMinX = "-74.25540"
             gridMaxX = "-73.70007"
@@ -64,7 +73,8 @@ def main():
             queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
 
         else:
-            queryOptionList = ["31", "36", "41"]
+            queryOptionListWindowed = ["31", "36", "41"]
+            queryOptionListRealtime = ["32", "37", "42"]
             dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
             gridMinX = "-74.25540"
             gridMaxX = "-73.70007"
@@ -75,96 +85,94 @@ def main():
             queryPolygon = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]"
             queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
 
-        for queryOption in queryOptionList:
+        for queryOption in queryOptionListWindowed:
             for approximateQuery in ifApproximateQuery:
-                for radius in radiusList:
-                    for wInterval in wIntervalList:
-                        for wStep in wStepList:
-                            for uniformGridSize in uniformGridSizeList:
+                radius = "0.005"
+                wInterval = "100"
+                wStep = "50"
+                uniformGridSize = "200"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                executionCostList.clear()
-                                numberRecordList.clear()
+            for radius in radiusList:
+                approximateQuery = "true"
+                wInterval = "100"
+                wStep = "50"
+                uniformGridSize = "200"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                for i in range(experimentFrequency):
-                                    parameters = {"programArgsList": ["--onCluster", "true",
-                                                                      "--approximateQuery", approximateQuery,
-                                                                      "--queryOption", queryOption,
-                                                                      "--inputTopicName", inputTopicName,
-                                                                      "--queryTopicName", "sampleTopic",
-                                                                      "--outputTopicName", "QueryLatency",
-                                                                      "--inputFormat", "GeoJSON",
-                                                                      "--dateFormat", dateFormat,
-                                                                      "--radius", radius,
-                                                                      "--aggregate", "SUM",
-                                                                      "--wType", "TIME",
-                                                                      "--wInterval", wInterval,
-                                                                      "--wStep", wStep,
-                                                                      "--uniformGridSize", uniformGridSize,
-                                                                      "--k", "10",
-                                                                      "--trajDeletionThreshold", 1000,
-                                                                      "--outOfOrderAllowedLateness", "1",
-                                                                      "--omegaJoinDuration", "1",
-                                                                      "--gridMinX", gridMinX,
-                                                                      "--gridMaxX", gridMaxX,
-                                                                      "--gridMinY", gridMinY,
-                                                                      "--gridMaxY", gridMaxY,
-                                                                      "--trajIDSet", trajIDSet,
-                                                                      "--queryPoint", queryPoint,
-                                                                      "--queryPolygon", queryPolygon,
-                                                                      "--queryLineString", queryLineString],
-                                                  "parallelism": 30}
+            for wInterval in wIntervalList:
+                approximateQuery = "true"
+                radius = "0.005"
+                wStep = "50"
+                uniformGridSize = "200"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                    x = submitJob(base_url, jar_id, parameters)
-                                    if x.status_code == 200:
-                                        print("Job submitted: " +
-                                              queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize)
+            for wStep in wStepList:
+                approximateQuery = "true"
+                radius = "0.005"
+                uniformGridSize = "200"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                    # Execute for 2 minutes
-                                    time.sleep(5 * 2)
+            for uniformGridSize in uniformGridSizeList:
+                approximateQuery = "true"
+                radius = "0.005"
+                wInterval = "100"
+                wStep = "50"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                    job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
-                                    y = getJobOverview(base_url, job_id)
-                                    print(str(y.status_code) + ", " + y.text)
+        for queryOption in queryOptionListRealtime:
+            for approximateQuery in ifApproximateQuery:
+                radius = "0.005"
+                wInterval = "100"
+                wStep = "50"
+                uniformGridSize = "200"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                    while str(json.dumps(y.json()['vertices'][0]['metrics']['write-records-complete'], indent=4)) != "true":
-                                        time.sleep(1)
-                                        y = getJobOverview(base_url, job_id)
-                                        print(str(y.status_code) + ", " + y.text)
+            for radius in radiusList:
+                approximateQuery = "true"
+                wInterval = "100"
+                wStep = "50"
+                uniformGridSize = "200"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
-                                    duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
-                                    print('duration : ' + duration)
-                                    metrics = json.dumps(y.json()['vertices'], indent=4)
-
-                                    records = json.dumps(y.json()['vertices'][0]['metrics']['write-records'], indent=4)
-                                    print('records : ' + records)
-
-                                    executionCostList.append(duration)
-                                    numberRecordList.append(records)
-
-                                    z = terminateJob(base_url, job_id)
-                                    print(str(z.status_code) + ", " + z.text)
-
-                                    # wait at-least 10 seconds before starting next job
-                                    time.sleep(5)
-
-                                file = openFile()
-
-                                avg_time_ms = average(executionCostList)
-                                avg_time_sec = avg_time_ms/1000
-                                avg_records = average(numberRecordList)
-                                throughput = avg_records/avg_time_sec
-
-                                file.write(
-                                    queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
-                                        executionCostList)[1:-1] + "," + str(avg_time_sec) + ", " + str(numberRecordList)[1:-1] + "," + str(avg_records) + ", " + str(throughput) + ", " + "\n")
-                                print(
-                                    queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
-                                        executionCostList)[1:-1] + "," + str(avg_time_sec) + ", " + str(
-                                        numberRecordList)[1:-1] + "," + str(avg_records) + ", " + str(
-                                        throughput) + ", " + "\n")
-
-                                file.flush()
-                                file.close()
+            for uniformGridSize in uniformGridSizeList:
+                approximateQuery = "true"
+                radius = "0.005"
+                wInterval = "100"
+                wStep = "50"
+                executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep,
+                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                               trajIDSet, queryPoint, queryPolygon, queryLineString,
+                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                               base_url, jar_id)
 
     # x = getAllJobsOverview(base_url)
 
@@ -172,6 +180,101 @@ def main():
     # for rows in y["jobs"]:
     #    if rows["state"] == "RUNNING":
     #        terminateJob(base_url, rows["jid"])
+
+
+def executeAndSave(queryOption, approximateQuery, inputTopicName, radius, wInterval, wStep, uniformGridSize, dateFormat,
+                   gridMinX, gridMaxX, gridMinY, gridMaxY, trajIDSet, queryPoint, queryPolygon, queryLineString,
+                   experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec, base_url, jar_id):
+    executionCostList = []
+    numberRecordList = []
+
+    executionCostList.clear()
+    numberRecordList.clear()
+
+    for i in range(experimentFrequency):
+        parameters = {"programArgsList": ["--onCluster", "true",
+                                          "--approximateQuery", approximateQuery,
+                                          "--queryOption", queryOption,
+                                          "--inputTopicName", inputTopicName,
+                                          "--queryTopicName", "sampleTopic",
+                                          "--outputTopicName", "QueryLatency",
+                                          "--inputFormat", "GeoJSON",
+                                          "--dateFormat", dateFormat,
+                                          "--radius", radius,
+                                          "--aggregate", "SUM",
+                                          "--wType", "TIME",
+                                          "--wInterval", wInterval,
+                                          "--wStep", wStep,
+                                          "--uniformGridSize", uniformGridSize,
+                                          "--k", "10",
+                                          "--trajDeletionThreshold", 1000,
+                                          "--outOfOrderAllowedLateness", "1",
+                                          "--omegaJoinDuration", "1",
+                                          "--gridMinX", gridMinX,
+                                          "--gridMaxX", gridMaxX,
+                                          "--gridMinY", gridMinY,
+                                          "--gridMaxY", gridMaxY,
+                                          "--trajIDSet", trajIDSet,
+                                          "--queryPoint", queryPoint,
+                                          "--queryPolygon", queryPolygon,
+                                          "--queryLineString", queryLineString],
+                      "parallelism": 30}
+
+        x = submitJob(base_url, jar_id, parameters)
+        if x.status_code == 200:
+            print("Job submitted: " +
+                  queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize)
+
+        # Execute for executionTimeSeconds
+        time.sleep(executionTimeSeconds)
+
+        job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
+        y = getJobOverview(base_url, job_id)
+        print(str(y.status_code) + ", " + y.text)
+
+        while str(json.dumps(y.json()['vertices'][0]['metrics']['write-records-complete'], indent=4)) != "true":
+            time.sleep(1)
+            y = getJobOverview(base_url, job_id)
+            print(str(y.status_code) + ", " + y.text)
+
+        duration = json.dumps(y.json()['vertices'][0]['duration'], indent=4)
+        print('duration : ' + duration)
+        metrics = json.dumps(y.json()['vertices'], indent=4)
+
+        records = json.dumps(y.json()['vertices'][0]['metrics']['write-records'], indent=4)
+        print('records : ' + records)
+
+        executionCostList.append(duration)
+        numberRecordList.append(records)
+
+        z = terminateJob(base_url, job_id)
+        print(str(z.status_code) + ", " + z.text)
+
+        # wait at-least 10 seconds before starting next job
+        time.sleep(waitBetweenExecutionsSec)
+
+    file = openFile()
+
+    avg_time_ms = average(executionCostList)
+    avg_time_sec = avg_time_ms / 1000
+    avg_records = average(numberRecordList)
+    throughput = avg_records / avg_time_sec
+
+    file.write(
+        queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
+            executionCostList)[1:-1].replace("'", '') + "," + str(avg_time_sec) + ", " + str(numberRecordList)[
+                                                                                         1:-1].replace("'",
+                                                                                                       '') + "," + str(
+            avg_records) + ", " + str(throughput) + "\n")
+    print(
+        queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
+            executionCostList)[1:-1].replace("'", '') + "," + str(
+            avg_time_sec) + ", " + str(numberRecordList)[
+                                   1:-1].replace("'", '') + "," + str(
+            avg_records) + ", " + str(throughput))
+
+    file.flush()
+    file.close()
 
 
 def submitJob(base_url, jar_id, parameters):
