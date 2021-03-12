@@ -150,10 +150,10 @@ def main():
 
                                 file.write(
                                     queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
-                                        executionCostList)[1:-1] + "," + str(numberRecordList)[1:-1] + "\n")
+                                        executionCostList)[1:-1].replace("'", '') + "," + str(numberRecordList)[1:-1].replace("'", '') + "\n")
                                 print(
                                     queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
-                                        executionCostList)[1:-1] + "," + str(numberRecordList)[1:-1])
+                                        executionCostList)[1:-1].replace("'", '') + "," + str(numberRecordList)[1:-1].replace("'", ''))
 
                                 file.flush()
                                 file.close()
