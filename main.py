@@ -120,13 +120,14 @@ def main():
                                               queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize)
 
                                     # Execute for 2 minutes
-                                    time.sleep(60 * 2)
+                                    time.sleep(5 * 2)
 
                                     job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
                                     y = getJobOverview(base_url, job_id)
                                     print(str(y.status_code) + ", " + y.text)
 
                                     while str(json.dumps(y.json()['vertices'][0]['metrics']['write-records-complete'], indent=4)) != "true":
+                                        time.sleep(1)
                                         y = getJobOverview(base_url, job_id)
                                         print(str(y.status_code) + ", " + y.text)
 
@@ -144,16 +145,23 @@ def main():
                                     print(str(z.status_code) + ", " + z.text)
 
                                     # wait at-least 10 seconds before starting next job
-                                    time.sleep(10)
+                                    time.sleep(5)
 
                                 file = openFile()
 
+                                avg_time_ms = average(executionCostList)
+                                avg_time_sec = avg_time_ms/1000
+                                avg_records = average(numberRecordList)
+                                throughput = avg_records/avg_time_sec
+
                                 file.write(
                                     queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
-                                        executionCostList)[1:-1] + "," + str(numberRecordList)[1:-1] + "\n")
+                                        executionCostList)[1:-1] + "," + str(avg_time_sec) + ", " + str(numberRecordList)[1:-1] + "," + str(avg_records) + ", " + str(throughput) + ", " + "\n")
                                 print(
                                     queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + wInterval + "," + wStep + "," + uniformGridSize + "," + str(
-                                        executionCostList)[1:-1] + "," + str(numberRecordList)[1:-1])
+                                        executionCostList)[1:-1] + "," + str(avg_time_sec) + ", " + str(
+                                        numberRecordList)[1:-1] + "," + str(avg_records) + ", " + str(
+                                        throughput) + ", " + "\n")
 
                                 file.flush()
                                 file.close()
@@ -243,35 +251,35 @@ def openFile():
     return file
 
 
-def grades_sum(data):
+def sum(data):
     total = 0
-    for grade in data:
-        total += grade
+    for x in data:
+        total += float(x)
     return total
 
 
-def grades_average(data):
-    sum_of_grades = grades_sum(data)
-    average = sum_of_grades / float(len(data))
+def average(data):
+    listSum = sum(data)
+    average = listSum / float(len(data))
     return average
 
 
-def grades_variance(data):
-    average = grades_average(data)
+def variance(data):
+    avg = average(data)
     variance = 0
-    for score in data:
-        variance += (average - score) ** 2
+    for x in data:
+        variance += (avg - float(x)) ** 2
     return variance / len(data)
 
 
-def grades_std_deviation(data):
-    return grades_variance(data) ** 0.5
+def std_deviation(data):
+    return variance(data) ** 0.5
 
 
 def calculate(data):
-    average = grades_average(data)
-    std = grades_std_deviation(data)
-    return (average, std)
+    avg = average(data)
+    std = std_deviation(data)
+    return (avg, std)
 
 
 if __name__ == "__main__":
