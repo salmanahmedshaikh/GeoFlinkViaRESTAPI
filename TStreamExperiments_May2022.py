@@ -2,6 +2,7 @@ import requests
 import os
 import json
 import time
+from datetime import datetime
 
 
 def main():
@@ -11,22 +12,19 @@ def main():
     # x = uploadJar(base_url, path)
     # x = deleteJar(base_url, jar_id)
 
-    jar_id = "5dee7c16-c3d8-479f-9c8d-e1edac64627e_SpatialDataGen-0.1.jar"
-    experimentFrequency = 3
+    jar_id = "f58d4555-13a4-45fd-b022-b7ba386abfa8_GeoFlinkProject-0.1.jar"
+
+    experimentFrequency = 2
     executionTimeSeconds = 120
-    waitBetweenExecutionsSec = 10
+    waitBetweenExecutionsSec = 60
 
-    # Range Query
-    outputFilePathAndName = "qureyOutput_RangeQuery_detailed.csv"
-    inputTopicNameList = ["TaxiDrive17MillionGeoJSON", "NYCBuildingsPolygons", "NYCBuildingsLineStrings"]
-    ifApproximateQuery = ["true", "false"]
-    radiusList = ["0.0005", "0.005", "0.05", "0.5"]
-    wIntervalList = ["50", "100", "150", "200", "250"]
-    wStepList = ["25", "50", "75", "100", "125"]
+    inputTopicNameList = ["TaxiDrive", "ATCShoppingMall"]
+    wIntervalList = ["10", "20", "30", "40", "50"]
+    wStepList = ["5", "10", "15", "20", "25"]
     uniformGridSizeList = ["100", "200", "300", "400", "500"]
 
-    queryOptionListWindowed = []
-    queryOptionListRealtime = []
+    queryOptionListNaive = []
+    queryOptionListGridBased = []
     dateFormat = ""
     gridMinX = ""
     gridMaxX = ""
@@ -37,319 +35,476 @@ def main():
     queryPolygon = ""
     queryLineString = ""
 
-    '''
-    file = openFile(outputFilePathAndName)
-    file.write(
-        "queryOption" + "," + "approximateQuery" + "," + "inputTopicName" + "," + "radius" + "," + "wInterval" + "," + "wStep" + "," + "uniformGridSize" + "," + "executionCost1, executionCost2, executionCost3" + "," + "avg_time_sec" + ", " + "numberRecords1, numberRecords2, numberRecords3, " + "avg_records" + ", " + "throughput" + "\n")
-    file.flush()
-    file.close()
-    '''
+    #file = openFile(outputFilePathAndName)
+    #file.write("queryOption" + "," + "approximateQuery" + "," + "inputTopicName" + "," + "radius" + "," + "wInterval" + "," + "wStep" + "," + "uniformGridSize" + "," + "executionCost1, executionCost2, executionCost3" + "," + "avg_time_sec" + ", " + "numberRecords1, numberRecords2, numberRecords3, " + "avg_records" + ", " + "throughput" + "\n")
+    #file.flush()
+    #file.close()
 
+
+    # Join Query
+    '''
     for inputTopicName in inputTopicNameList:
-        if inputTopicName == "TaxiDrive17MillionGeoJSON":
-            queryOptionListWindowed = ["1", "6", "11"]
-            queryOptionListRealtime = ["2", "7", "12"]
+
+        outputFilePathAndName = "qureyOutput_TStream_JoinQuery.csv"
+        logFilePathAndName = "TStreamQueryLogJoin.csv"
+        radiusList = []
+
+        approximateQuery = "false"
+        k = "10"  # k in join query indicates query stream rate
+
+        if inputTopicName == "TaxiDrive":
+            queryOptionListNaive = ["2100"]
+            queryOptionListGridBased = ["210"]
+            radiusList = ["0.0005", "0.005", "0.05", "0.5"]
+            radius = "0.005"
+            queryTopicName = "TaxiDrive_Live"
             dateFormat = "yyyy-MM-dd HH:mm:ss"
             gridMinX = "115.50000"
             gridMaxX = "117.60000"
             gridMinY = "39.60000"
             gridMaxY = "41.10000"
-            trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
-            queryPoint = "[116.14319183444924, 40.07271444145411]"
-            queryPolygon = "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762], [116.14319183444924, 40.07271444145411]"
-            queryLineString = "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"
 
-        elif inputTopicName == "NYCBuildingsPolygons":
-            queryOptionListWindowed = ["16", "21", "26"]
-            queryOptionListRealtime = ["17", "22", "27"]
+        elif inputTopicName == "ATCShoppingMall":
+            queryOptionListNaive = ["2100"]
+            queryOptionListGridBased = ["210"]
+            radiusList = ["5", "50", "500", "5000"]
+            radius = "50"
+            queryTopicName = "ATCShoppingMall_Live"
             dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-            gridMinX = "-74.25540"
-            gridMaxX = "-73.70007"
-            gridMinY = "40.49843"
-            gridMaxY = "40.91506"
-            trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
-            queryPoint = "[-74.0000, 40.72714]"
-            queryPolygon = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]"
-            queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
+            gridMinX = "-41543.0"
+            gridMaxX = "48431.0"
+            gridMinY = "-27825.0"
+            gridMaxY = "24224.0"
 
-        else:
-            queryOptionListWindowed = ["31", "36", "41"]
-            queryOptionListRealtime = ["32", "37", "42"]
-            dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-            gridMinX = "-74.25540"
-            gridMaxX = "-73.70007"
-            gridMinY = "40.49843"
-            gridMaxY = "40.91506"
-            trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
-            queryPoint = "[-74.0000, 40.72714]"
-            queryPolygon = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]"
-            queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
+        # Variables for variable stream rate experiments
+        wInterval = "30"
+        wStep = "15"
+        uniformGridSize = "200"
+        numQueryPoints = "100" # numQueryPoints in join query indicates number of distinct objects in query stream
 
-        for queryOption in queryOptionListWindowed:
-            for approximateQuery in ifApproximateQuery:
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
+        for queryOption in queryOptionListNaive:
+
+            executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                   wInterval, wStep,
+                                   uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                   numQueryPoints,
+                                   trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                   experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                   base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+            
+            for radius2 in radiusList:
+                wInterval = "30"
+                wStep = "15"
                 uniformGridSize = "200"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                numQueryPoints = "300"
+                k = "10"  # k in join query indicates query stream rate
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius2, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
 
-            for radius in radiusList:
-                approximateQuery = "true"
-                wInterval = "100"
-                wStep = "50"
+        for queryOption in queryOptionListGridBased:
+
+            executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                   wInterval, wStep,
+                                   uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                   numQueryPoints,
+                                   trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                   experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                   base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+            
+            for radius2 in radiusList:
+                wInterval = "30"
+                wStep = "15"
                 uniformGridSize = "200"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-            for wInterval in wIntervalList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wStep = "50"
-                uniformGridSize = "200"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-            for wStep in wStepList:
-                approximateQuery = "true"
-                radius = "0.005"
-                uniformGridSize = "200"
-                wInterval = "100"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
+                numQueryPoints = "300"
+                k = "10"  # k in join query indicates query stream rate
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius2, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                                        
             for uniformGridSize in uniformGridSizeList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-        for queryOption in queryOptionListRealtime:
-            for approximateQuery in ifApproximateQuery:
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
-                uniformGridSize = "200"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-            for radius in radiusList:
-                approximateQuery = "true"
-                wInterval = "100"
-                wStep = "50"
-                uniformGridSize = "200"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-            for uniformGridSize in uniformGridSizeList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
-                k = "0"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-                               
-
-    # kNN Query
-    outputFilePathAndName = "qureyOutput_kNNQuery_detailed.csv"
-    inputTopicNameList = ["TaxiDrive17MillionGeoJSON", "NYCBuildingsPolygons", "NYCBuildingsLineStrings"]
-    kList = ["25", "50", "75", "100", "125"]
-    radiusList = ["0.0005", "0.005", "0.05", "0.5"]
-    wIntervalList = ["50", "100", "150", "200", "250"]
-    wStepList = ["25", "50", "75", "100", "125"]
-    uniformGridSizeList = ["100", "200", "300", "400", "500"]
-
-    queryOptionListWindowed = []
-    queryOptionListRealtime = []
-    dateFormat = ""
-    gridMinX = ""
-    gridMaxX = ""
-    gridMinY = ""
-    gridMaxY = ""
-    trajIDSet = ""
-    queryPoint = ""
-    queryPolygon = ""
-    queryLineString = ""
-
-    '''
-    file = openFile(outputFilePathAndName)
-    file.write(
-        "queryOption" + "," + "approximateQuery" + "," + "inputTopicName" + "," + "radius" + "," + "k" + "," + "wInterval" + "," + "wStep" + "," + "uniformGridSize" + "," + "executionCost1, executionCost2, executionCost3" + "," + "avg_time_sec" + ", " + "numberRecords1, numberRecords2, numberRecords3, " + "avg_records" + ", " + "throughput" + "\n")
-    file.flush()
-    file.close()
-    '''
-
+                wInterval = "30"
+                wStep = "15"
+                numQueryPoints = "300"
+                k = "10"  # k in join query indicates query stream rate
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                
+                
+    # Range Query with multiple polygons
+    inputTopicNameList = ["ATCShoppingMall"]
     for inputTopicName in inputTopicNameList:
-        if inputTopicName == "TaxiDrive17MillionGeoJSON":
-            queryOptionListWindowed = ["51", "56", "61"]
-            queryOptionListRealtime = ["52", "57", "62"]
+
+        outputFilePathAndName = "qureyOutput_TStream_RangeQuery_2.csv"
+        logFilePathAndName = "TStreamQueryLogRange.csv"
+        kList = ["500", "1000", "1500", "2000"]  # k in range query indicates number of polygons
+
+        approximateQuery = "false"
+        numQueryPoints = str(0)
+        queryTopicName = ""
+
+        if inputTopicName == "TaxiDrive":
+            queryOptionListNaive = ["2040"]
+            queryOptionListGridBased = ["204"]
             dateFormat = "yyyy-MM-dd HH:mm:ss"
             gridMinX = "115.50000"
             gridMaxX = "117.60000"
             gridMinY = "39.60000"
             gridMaxY = "41.10000"
-            trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
-            queryPoint = "[116.14319183444924, 40.07271444145411]"
-            queryPolygon = "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762], [116.14319183444924, 40.07271444145411]"
-            queryLineString = "[116.14319183444924, 40.07271444145411], [116.14305232274667, 40.06231150684208], [116.16313670438304, 40.06152322130762]"
 
-        elif inputTopicName == "NYCBuildingsPolygons":
-            queryOptionListWindowed = ["66", "71", "76"]
-            queryOptionListRealtime = ["67", "72", "77"]
+        elif inputTopicName == "ATCShoppingMall":
+            queryOptionListNaive = ["2040"]
+            queryOptionListGridBased = ["204"]
             dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-            gridMinX = "-74.25540"
-            gridMaxX = "-73.70007"
-            gridMinY = "40.49843"
-            gridMaxY = "40.91506"
-            trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
-            queryPoint = "[-74.0000, 40.72714]"
-            queryPolygon = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]"
-            queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
+            gridMinX = "-41543.0"
+            gridMaxX = "48431.0"
+            gridMinY = "-27825.0"
+            gridMaxY = "24224.0"
 
-        else:
-            queryOptionListWindowed = ["81", "86", "91"]
-            queryOptionListRealtime = ["82", "87", "92"]
-            dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-            gridMinX = "-74.25540"
-            gridMaxX = "-73.70007"
-            gridMinY = "40.49843"
-            gridMaxY = "40.91506"
-            trajIDSet = "9211800, 9320801, 9090500, 7282400, 10390100"
-            queryPoint = "[-74.0000, 40.72714]"
-            queryPolygon = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744], [-73.98452330316861, 40.67563064195701]"
-            queryLineString = "[-73.98452330316861, 40.67563064195701], [-73.98776303794413, 40.671603874732455], [-73.97826680869485, 40.666980275860936], [-73.97297380718484, 40.67347172572744]"
+        
+        for queryOption in queryOptionListNaive:
 
-        for queryOption in queryOptionListWindowed:
             for k in kList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
+                radius = "0"
+                wInterval = "30"
+                wStep = "15"
                 uniformGridSize = "200"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-            for radius in radiusList:
-                approximateQuery = "true"
-                wInterval = "100"
-                wStep = "50"
-                uniformGridSize = "200"
-                k = "50"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
 
             for wInterval in wIntervalList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wStep = "50"
+                radius = "0"
+                wStep = "15"
                 uniformGridSize = "200"
-                k = "50"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                k = "1000"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
 
             for wStep in wStepList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
+                radius = "0"
+                wInterval = "30"
                 uniformGridSize = "200"
-                k = "50"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                k = "1000"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName) 
 
-            for uniformGridSize in uniformGridSizeList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
-                k = "50"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
-
-        for queryOption in queryOptionListRealtime:
+        for queryOption in queryOptionListGridBased:            
             for k in kList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
+                radius = "0"
+                wInterval = "30"
+                wStep = "15"
                 uniformGridSize = "200"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
 
-            for radius in radiusList:
-                approximateQuery = "true"
-                wInterval = "100"
-                wStep = "50"
+            for wInterval in wIntervalList:
+                radius = "0"
+                wStep = "15"
                 uniformGridSize = "200"
-                k = "50"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                k = "1000"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
 
+            for wStep in wStepList:
+                radius = "0"
+                wInterval = "30"
+                uniformGridSize = "200"
+                k = "1000"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                                       
+
+            uniformGridSizeList = ["500"]
             for uniformGridSize in uniformGridSizeList:
-                approximateQuery = "true"
-                radius = "0.005"
-                wInterval = "100"
-                wStep = "50"
-                k = "50"
-                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                               uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
-                               trajIDSet, queryPoint, queryPolygon, queryLineString,
-                               experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
-                               base_url, jar_id, outputFilePathAndName)
+                radius = "0"
+                wInterval = "30"
+                wStep = "15"
+                k = "1000"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k,
+                                       wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY,
+                                       numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                                       '''
+
+
+    # Knn Query with multiple query points
+    for inputTopicName in inputTopicNameList:
+
+        outputFilePathAndName = "qureyOutput_TStream_kNNQuery.csv"
+        logFilePathAndName = "TStreamQueryLogKnn.csv"
+        radiusList = []
+        kList = ["20", "40", "60", "80", "100"] # number of k
+        numQueryPointsList = ["100", "200", "300", "400", "500"] # number of query points
+
+        approximateQuery = "false"
+        queryTopicName = ""
+
+        if inputTopicName == "TaxiDrive":
+            queryOptionListNaive = ["2130"]
+            queryOptionListGridBased = ["213"]
+            radiusList = ["0.0005", "0.005", "0.05", "0.5"]
+            radius = "0.005"
+            dateFormat = "yyyy-MM-dd HH:mm:ss"
+            gridMinX = "115.50000"
+            gridMaxX = "117.60000"
+            gridMinY = "39.60000"
+            gridMaxY = "41.10000"
+
+        elif inputTopicName == "ATCShoppingMall":
+            queryOptionListNaive = ["2130"]
+            queryOptionListGridBased = ["213"]
+            radiusList = ["5", "50", "500", "5000"]
+            radius = "50"
+            dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+            gridMinX = "-41543.0"
+            gridMaxX = "48431.0"
+            gridMinY = "-27825.0"
+            gridMaxY = "24224.0"
+
+        for queryOption in queryOptionListNaive:
+            '''
+            for k in kList:
+                wInterval = "30"
+                wStep = "15"
+                uniformGridSize = "200"
+                numQueryPoints = "300"                
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+
+            for radius2 in radiusList:
+                k = "40"
+                wInterval = "30"
+                wStep = "15"
+                uniformGridSize = "200"
+                numQueryPoints = "300"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius2, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                                       '''
+
+            for numQueryPoints in numQueryPointsList:
+                k = "40"
+                wInterval = "30"
+                wStep = "15"
+                uniformGridSize = "200"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+
+        for queryOption in queryOptionListGridBased:
+            '''
+            for k in kList:
+                wInterval = "30"
+                wStep = "15"
+                uniformGridSize = "200"
+                numQueryPoints = "300"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+
+            for radius2 in radiusList:
+                k = "40"
+                wInterval = "30"
+                wStep = "15"
+                uniformGridSize = "200"
+                numQueryPoints = "300"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius2, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                                       '''
+
+            for numQueryPoints in numQueryPointsList:
+                k = "40"
+                wInterval = "30"
+                wStep = "15"
+                uniformGridSize = "200"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+
+            '''
+            for uniformGridSize in uniformGridSizeList:
+                k = "40"
+                wInterval = "30"
+                wStep = "15"
+                numQueryPoints = "300"
+                executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k, wInterval, wStep,
+                                       uniformGridSize, dateFormat, gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints,
+                                       trajIDSet, queryPoint, queryPolygon, queryLineString,
+                                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec,
+                                       base_url, jar_id, outputFilePathAndName, logFilePathAndName)
+                                       '''
+
+def executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, queryTopicName, radius, k, wInterval, wStep,
+                           uniformGridSize, dateFormat,
+                           gridMinX, gridMaxX, gridMinY, gridMaxY, numQueryPoints, trajIDSet, queryPoint, queryPolygon,
+                           queryLineString,
+                           experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec, base_url, jar_id,
+                           outputFilePathAndName, logFilePathAndName):
+
+    cellLength = abs((float(gridMaxX) - float(gridMinX))) / float(uniformGridSize)
+    logFile = openFile(logFilePathAndName)
+
+    for i in range(experimentFrequency):
+        vertexNameList = []
+        execDurationList = []
+        readRecordsList = []
+        writeRecordsList = []
+        parameters = {"programArgsList": ["-Dgeoflink.clusterMode=true",
+                                          "-Dgeoflink.parallelism=30",
+                                          "-Dgeoflink.inputStream1.topicName=" + inputTopicName,
+                                          "-Dgeoflink.inputStream1.minX=" + gridMinX,
+                                          "-Dgeoflink.inputStream1.minY=" + gridMinY,
+                                          "-Dgeoflink.inputStream1.dateFormat=" + dateFormat,
+                                          "-Dgeoflink.inputStream1.cellLength=" + str(cellLength),
+                                          "-Dgeoflink.inputStream1.gridRows=" + uniformGridSize,
+                                          "-Dgeoflink.inputStream1.gridColumns=" + uniformGridSize,
+                                          "-Dgeoflink.inputStream2.topicName=" + queryTopicName,
+                                          "-Dgeoflink.inputStream2.minX=" + gridMinX,
+                                          "-Dgeoflink.inputStream2.minY=" + gridMinY,
+                                          "-Dgeoflink.inputStream2.dateFormat=yyyy-MM-dd HH:mm:ss",
+                                          "-Dgeoflink.inputStream2.cellLength=" + str(cellLength),
+                                          "-Dgeoflink.inputStream2.gridRows=" + uniformGridSize,
+                                          "-Dgeoflink.inputStream2.gridColumns=" + uniformGridSize,
+                                          "-Dgeoflink.query.option=" + queryOption,
+                                          "-Dgeoflink.query.k=" + k,
+                                          "-Dgeoflink.query.radius=" + radius,
+                                          "-Dgeoflink.query.omegaDuration=" + numQueryPoints,
+                                          "-Dgeoflink.window.interval=" + wInterval,
+                                          "-Dgeoflink.window.step=" + wStep
+                                          ]}
+
+        x = submitJob(base_url, jar_id, parameters)
+        if x.status_code == 200:
+            print(str(datetime.now()) + " Job submitted: " +
+                  queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + k + "," + numQueryPoints + "," + wInterval + "," + wStep + "," + uniformGridSize+ ", Frequency " + str(i))
+            logFile.write(str(datetime.now()) + "Job submitted: " +
+                  queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + k + "," + numQueryPoints + "," + wInterval + "," + wStep + "," + uniformGridSize+ ", Frequency " + str(i)+ "\n")
+        else:
+            print(str(datetime.now()) + " Job could not be submitted: " + x.text)
+            logFile.write(str(datetime.now()) + "Job could not be submitted: " + x.text+ "\n")
+
+        # Execute for executionTimeSeconds
+        time.sleep(executionTimeSeconds)
+
+        job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
+        y = getJobOverview(base_url, job_id)
+        print(str(datetime.now()) + str(y.status_code) + ", " + y.text)
+        logFile.write(str(datetime.now()) + str(y.status_code) + ", " + y.text+ "\n")
+
+        while str(json.dumps(y.json()['vertices'][0]['metrics']['write-records-complete'], indent=4)) != "true":
+            time.sleep(1)
+            y = getJobOverview(base_url, job_id)
+            print(str(datetime.now()) + str(y.status_code) + ", " + y.text)
+            logFile.write(str(datetime.now()) + str(y.status_code) + ", " + y.text+ "\n")
+
+        jsonTxt = json.loads(y.text)
+
+        for vertex in jsonTxt["vertices"]:
+            vertexNameList.append(json.dumps(vertex['name'], indent=4))
+            execDurationList.append(json.dumps(vertex['duration'], indent=4))
+            readRecordsList.append(json.dumps(vertex['metrics']['read-records'], indent=4))
+            writeRecordsList.append(json.dumps(vertex['metrics']['write-records'], indent=4))
+
+        z = terminateJob(base_url, job_id)
+        print(str(datetime.now()) + str(z.status_code) + ", " + z.text)
+        logFile.write(str(datetime.now()) + str(z.status_code) + ", " + z.text+ "\n")
+
+        y = getJobOverview(base_url, job_id)
+        print(str(datetime.now()) + str(y.status_code) + ", " + y.text)
+        logFile.write(str(datetime.now()) + str(y.status_code) + ", " + y.text+ "\n")
+
+        while str(json.dumps(y.json()['state'], indent=4)).strip('\"') != "CANCELED":
+            time.sleep(10)
+            terminateJob(base_url, job_id)
+            y = getJobOverview(base_url, job_id)
+            print(str(datetime.now()) + str(y.status_code) + ", " + y.text)
+            logFile.write(str(datetime.now()) + str(y.status_code) + ", " + y.text+ "\n")
+            print(str(datetime.now()) + str(json.dumps(y.json()['state'], indent=4)))
+            logFile.write(str(datetime.now()) + str(json.dumps(y.json()['state'], indent=4))+ "\n")
+            if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED":
+                break
+
+        # wait at-least 10 seconds before starting next job
+        time.sleep(waitBetweenExecutionsSec)
+
+        file = openFile(outputFilePathAndName)
+
+        vertexStr = ""
+        for j in range(len(vertexNameList)):
+            vertexStr = vertexStr + ", " + vertexNameList[j].replace(',', '-') + ", " + execDurationList[j] + ", " + \
+                        readRecordsList[
+                            j] + ", " + writeRecordsList[j]
+
+        file.write(
+            queryOption + "," + str(i) + "," + inputTopicName + "," + radius + "," + k + "," + numQueryPoints + "," + wInterval + "," + wStep + "," + uniformGridSize + vertexStr + "\n")
+        print(
+            queryOption + "," + str(i) + "," + inputTopicName + "," + radius + "," + k + "," + numQueryPoints + "," + wInterval + "," + wStep + "," + uniformGridSize + vertexStr)
+
+        file.flush()
+        file.close()
+        logFile.flush()
+
+    logFile.close()
 
 
     '''
@@ -382,7 +537,7 @@ def main():
     queryDateFormat = ""
     queryTopicName = ""
 
-    
+
     file = openFile(outputFilePathAndName)
     file.write(
         "queryOption" + "," + "approximateQuery" + "," + "inputTopicName" + "," + "radius" + "," + "k" + "," + "wInterval" + "," + "wStep" + "," + "queryStreamRate" + "," + "uniformGridSize" + "," + "executionCost1, executionCost2, executionCost3" + "," + "avg_time_sec" + ", " + "numberRecords1, numberRecords2, numberRecords3, " + "avg_records" + ", " + "throughput" + "\n")
@@ -811,12 +966,13 @@ def main():
        '''
 
 
-def executeAndSaveLatency(queryOption, approximateQuery, inputTopicName, queryTopicName, outputTopicName, radius, k, wInterval, wStep,
-                       queryStreamRate, uniformGridSize, dateFormat, queryDateFormat,
-                       gridMinX, gridMaxX, gridMinY, gridMaxY, qGridMinX, qGridMaxX, qGridMinY, qGridMaxY, trajIDSet,
-                       queryPoint, queryPolygon, queryLineString,
-                       experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec, base_url, jar_id,
-                       outputFilePathAndName):
+def executeAndSaveLatency(queryOption, approximateQuery, inputTopicName, queryTopicName, outputTopicName, radius, k,
+                          wInterval, wStep,
+                          queryStreamRate, uniformGridSize, dateFormat, queryDateFormat,
+                          gridMinX, gridMaxX, gridMinY, gridMaxY, qGridMinX, qGridMaxX, qGridMinY, qGridMaxY, trajIDSet,
+                          queryPoint, queryPolygon, queryLineString,
+                          experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec, base_url, jar_id,
+                          outputFilePathAndName):
     executionCostList = []
     numberRecordList = []
     vertexNameList = []
@@ -827,38 +983,25 @@ def executeAndSaveLatency(queryOption, approximateQuery, inputTopicName, queryTo
     executionCostList.clear()
     numberRecordList.clear()
 
+    cellLength = (gridMaxX - gridMinX)/uniformGridSize
+
     for i in range(experimentFrequency):
-        parameters = {"programArgsList": ["--onCluster", "true",
-                                          "--approximateQuery", approximateQuery,
-                                          "--queryOption", queryOption,
-                                          "--inputTopicName", inputTopicName,
-                                          "--queryTopicName", queryTopicName,
-                                          "--outputTopicName", outputTopicName,
-                                          "--inputFormat", "GeoJSON",
-                                          "--dateFormat", dateFormat,
-                                          "--queryDateFormat", queryDateFormat,
-                                          "--radius", radius,
-                                          "--aggregate", "SUM",
-                                          "--wType", "TIME",
-                                          "--wInterval", wInterval,
-                                          "--wStep", wStep,
-                                          "--uniformGridSize", uniformGridSize,
-                                          "--k", k,
-                                          "--trajDeletionThreshold", 1000,
-                                          "--outOfOrderAllowedLateness", "1",
-                                          "--omegaJoinDuration", "1",
-                                          "--gridMinX", gridMinX,
-                                          "--gridMaxX", gridMaxX,
-                                          "--gridMinY", gridMinY,
-                                          "--gridMaxY", gridMaxY,
-                                          "--qGridMinX", qGridMinX,
-                                          "--qGridMaxX", qGridMaxX,
-                                          "--qGridMinY", qGridMinY,
-                                          "--qGridMaxY", qGridMaxY,
-                                          "--trajIDSet", trajIDSet,
-                                          "--queryPoint", queryPoint,
-                                          "--queryPolygon", queryPolygon,
-                                          "--queryLineString", queryLineString],
+        parameters = {"programArgsList": ["-Dgeoflink.clusterMode = true",
+                                          "-Dgeoflink.parallelism = 30",
+                                          "-Dgeoflink.inputStream1.topicName = ", inputTopicName,
+                                          "-Dgeoflink.inputStream2.topicName = ", queryTopicName,
+                                          "-Dgeoflink.inputStream1.minX = ", gridMinX,
+                                          "-Dgeoflink.inputStream1.minY = ", gridMinY,
+                                          "-Dgeoflink.inputStream1.dateFormat = ", dateFormat,
+                                          "-Dgeoflink.inputStream1.cellLength = ", cellLength,
+                                          "-Dgeoflink.inputStream1.gridRows = ", uniformGridSize,
+                                          "-Dgeoflink.inputStream1.gridColumns = ", uniformGridSize,
+                                          "-Dgeoflink.query.option = ", queryOption,
+                                          "-Dgeoflink.query.k = ", k,
+                                          "-Dgeoflink.query.radius = ", radius,
+                                          "-Dgeoflink.query.omegaDuration = 100",
+                                          "-Dgeoflink.window.interval = ", wInterval,
+                                          "-Dgeoflink.window.step = ", wStep],
                       "parallelism": 30}
 
         x = submitJob(base_url, jar_id, parameters)
@@ -1150,101 +1293,6 @@ def executeAndSave(queryOption, approximateQuery, inputTopicName, radius, k, wIn
             avg_time_sec) + ", " + str(numberRecordList)[
                                    1:-1].replace("'", '') + "," + str(
             avg_records) + ", " + str(throughput))
-
-    file.flush()
-    file.close()
-
-
-def executeAndSaveDetailed(queryOption, approximateQuery, inputTopicName, radius, k, wInterval, wStep,
-                   uniformGridSize, dateFormat,
-                   gridMinX, gridMaxX, gridMinY, gridMaxY, trajIDSet, queryPoint, queryPolygon, queryLineString,
-                   experimentFrequency, executionTimeSeconds, waitBetweenExecutionsSec, base_url, jar_id,
-                   outputFilePathAndName):
-
-    vertexNameList = []
-    execDurationList = []
-    readRecordsList = []
-    writeRecordsList = []
-
-    for i in range(experimentFrequency):
-        parameters = {"programArgsList": ["--onCluster", "true",
-                                          "--approximateQuery", approximateQuery,
-                                          "--queryOption", queryOption,
-                                          "--inputTopicName", inputTopicName,
-                                          "--queryTopicName", "queryTopicName",
-                                          "--outputTopicName", "QueryLatency",
-                                          "--inputFormat", "GeoJSON",
-                                          "--dateFormat", dateFormat,
-                                          "--queryDateFormat", dateFormat,
-                                          "--radius", radius,
-                                          "--aggregate", "SUM",
-                                          "--wType", "TIME",
-                                          "--wInterval", wInterval,
-                                          "--wStep", wStep,
-                                          "--uniformGridSize", uniformGridSize,
-                                          "--k", k,
-                                          "--trajDeletionThreshold", 1000,
-                                          "--outOfOrderAllowedLateness", "1",
-                                          "--omegaJoinDuration", "1",
-                                          "--gridMinX", gridMinX,
-                                          "--gridMaxX", gridMaxX,
-                                          "--gridMinY", gridMinY,
-                                          "--gridMaxY", gridMaxY,
-                                          "--qGridMinX", gridMinX,
-                                          "--qGridMaxX", gridMaxX,
-                                          "--qGridMinY", gridMinY,
-                                          "--qGridMaxY", gridMaxY,
-                                          "--trajIDSet", trajIDSet,
-                                          "--queryPoint", queryPoint,
-                                          "--queryPolygon", queryPolygon,
-                                          "--queryLineString", queryLineString],
-                      "parallelism": 30}
-
-
-        x = submitJob(base_url, jar_id, parameters)
-        if x.status_code == 200:
-            print("Job submitted: " +
-                  queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + k + "," + wInterval + "," + wStep + "," + uniformGridSize)
-        else:
-            print("Job could not be submitted: " + x.text)
-
-        # Execute for executionTimeSeconds
-        time.sleep(executionTimeSeconds)
-
-        job_id = json.dumps(x.json()['jobid'], indent=4).replace('"', '')
-        y = getJobOverview(base_url, job_id)
-        print(str(y.status_code) + ", " + y.text)
-
-        while str(json.dumps(y.json()['vertices'][0]['metrics']['write-records-complete'], indent=4)) != "true":
-            time.sleep(1)
-            y = getJobOverview(base_url, job_id)
-            print(str(y.status_code) + ", " + y.text)
-
-        jsonTxt = json.loads(y.text)
-
-        for vertex in jsonTxt["vertices"]:
-            vertexNameList.append(json.dumps(vertex['name'], indent=4))
-            execDurationList.append(json.dumps(vertex['duration'], indent=4))
-            readRecordsList.append(json.dumps(vertex['metrics']['read-records'], indent=4))
-            writeRecordsList.append(json.dumps(vertex['metrics']['write-records'], indent=4))
-
-        z = terminateJob(base_url, job_id)
-        print(str(z.status_code) + ", " + z.text)
-
-        # wait at-least 10 seconds before starting next job
-        time.sleep(waitBetweenExecutionsSec)
-
-    file = openFile(outputFilePathAndName)
-
-    vertexStr = ""
-    for i in range(len(vertexNameList)):
-        vertexStr = vertexStr + ", " + vertexNameList[i].replace(',', '-') + ", " + execDurationList[i] + ", " + readRecordsList[
-            i] + ", " + writeRecordsList[i]
-
-    file.write(
-        queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + k + "," + wInterval + "," + wStep + "," + uniformGridSize + vertexStr + "\n")
-    print(
-        queryOption + "," + approximateQuery + "," + inputTopicName + "," + radius + "," + k + "," + wInterval + "," + wStep + "," + uniformGridSize + vertexStr)
 
     file.flush()
     file.close()
