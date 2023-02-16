@@ -107,7 +107,7 @@ def std_deviation(data):
     return variance(data) ** 0.5
 
 
-def calculate(data):
+def avg_and_std_deviation(data):
     avg = average(data)
     std = std_deviation(data)
     return (avg, std)
