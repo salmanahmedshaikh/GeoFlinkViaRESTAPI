@@ -7,24 +7,23 @@ def main():
 
     jar_id = "92598495-1dbe-43ea-abb8-1608ecc30456_GeoFlinkProject-0.2.jar"
 
+    experimentFrequency = 3
+    executionTimeSeconds = 10
+    waitBetweenExecutionsSec = 10
 
-    experimentFrequency = 5
-    executionTimeSeconds = 120
-    waitBetweenExecutionsSec = 90
-
-    # 2041 TrajectoryPolygonTRangeQuery
-    # 2042 IncrementalTumblingWinBasedTRangeQuery
-    # 2043 IncrementalTumblingNoGridTRangeQuery
-    # 2044 IncrementalTumblingLazyTRangeQuery
-    # 2045 IncrementalTumblingPanesPartialsTRangeQuery
-    # 2046 IncrementalTumblingPanesPartialsLazyTRangeQuery
+    # 2101 TrajectorySimilarityQuery
 
     rangeQueryIDList = ["2101"]
-    wIntervalList = [5000, 10000]
-
+    wIntervalList = [2000, 4000, 6000, 8000, 10000]
+    wSlideStepList = [1, 5, 10, 15, 20, 25]
+    parallelismList = [1, 10, 20, 30]
+    thresholdList = [0.00001, 0.00005, 0.0001]
+    earlyAbandoningList = ["true"]
+    numQueryTrajectoriesList = [100, 200, 300, 400, 500]
+    algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "IncrementalMBR", "IncrementalNormalizedMBR"]
     inputTopicName = "PortugalTaxiTrajs"
-    outputTopicName = ""
-    parallelism = 5
+    outputTopicName = "PortugalTaxiTrajOutput"
+    bootStrapServers = "localhost:9092"
 
     gridMinX = 0
     gridMinY = 0
@@ -33,25 +32,31 @@ def main():
     gridRows = 100
     gridColumns = 100
     k = 1000
-    wInterval = 5
-    wStep = 50
 
-    outputFilePathAndName = "output/TStreamIncrementalQueryExperiments.csv"
-    logFilePathAndName = "logs/TStreamIncrementalQueryExperiments_log.csv"
+    outputFilePathAndName = "output/TStreamIncrementalTrajSimilarityExperiments.csv"
+    logFilePathAndName = "logs/TStreamIncrementalTrajSimilarityExperiments_log.csv"
 
-    for wInterval in wIntervalList:
-        for queryID in rangeQueryIDList:
-            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
-                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, experimentFrequency,
-                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName)
+    for queryID in rangeQueryIDList:
+        for earlyAbandoning in earlyAbandoningList:
+            for wInterval in wIntervalList:
+                for wStep in wSlideStepList:
+                    for parallelism in parallelismList:
+                        for threshold in thresholdList:
+                            for numQueryTrajectories in numQueryTrajectoriesList:
+                                for algorithm in algorithmList:
+
+                                    executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
+                                                          gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                                          numQueryTrajectories, algorithm, earlyAbandoning, experimentFrequency,
+                                                          executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
+                                                          outputFilePathAndName, logFilePathAndName, bootStrapServers)
 
 
 def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
-                          gridMinX, gridMinY, cellLength, gridRows, gridColumns, experimentFrequency,
-                          executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
-                          outputFilePathAndName, logFilePathAndName):
-    bootStrapServers = "localhost:9092"
+                                                          gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                                          numQueryTrajectories, algorithm, earlyAbandoning, experimentFrequency,
+                                                          executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
+                                                          outputFilePathAndName, logFilePathAndName, bootStrapServers):
 
     executionCostList = []
     numberRecordList = []
@@ -65,7 +70,6 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
 
     logFile = openFile(logFilePathAndName)
 
-    #for i in range(experimentFrequency):
     i = 0
     while i < experimentFrequency:
         parameters = {"programArgsList": ["-Dgeoflink.clusterMode=true",
@@ -81,19 +85,22 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                           "-Dgeoflink.query.option=" + queryID,
                                           "-Dgeoflink.query.k=" + str(k),
                                           "-Dgeoflink.window.interval=" + str(wInterval),
-                                          "-Dgeoflink.window.step=" + str(wStep)
+                                          "-Dgeoflink.window.step=" + str(wStep),
+                                          "-Dgeoflink.trajectorySimilarity.threshold=" + str(threshold),
+                                          "-Dgeoflink.trajectorySimilarity.algorithm=" + algorithm,
+                                          "-Dgeoflink.trajectorySimilarity.numQueryTrajectories=" + str(numQueryTrajectories),
+                                          "-Dgeoflink.trajectorySimilarity.earlyAbandoning=" + earlyAbandoning
                                           ]}
 
         x = submitJob(base_url, jar_id, parameters)
 
         if x.status_code == 200:
             print(str(datetime.now()) + " Job submitted: " +
-                  queryID + "," + inputTopicName + "," + str(k) + "," + str(cellLength) + "," + str(
-                gridRows) + "," + str(gridColumns) + "," + str(wInterval) + "," + str(wStep) + ", Frequency " + str(i))
+                  queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(parallelism) + "," + str(threshold)
+                  + "," + str(numQueryTrajectories) + "," + earlyAbandoning + ", Frequency " + str(i))
             logFile.write(str(datetime.now()) + " Job submitted: " +
-                          queryID + "," + inputTopicName + "," + str(k) + "," + str(cellLength) + "," + str(
-                gridRows) + "," + str(gridColumns) + "," + str(wInterval) + "," + str(wStep) + ", Frequency " + str(
-                i) + "\n")
+                  queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(parallelism) + "," + str(threshold)
+                  + "," + str(numQueryTrajectories) + "," + earlyAbandoning + ", Frequency " + str(i) + "\n")
         else:
             print(str(datetime.now()) + " Job could not be submitted: " + x.text)
             logFile.write(str(datetime.now()) + "Job could not be submitted: " + x.text + "\n")
@@ -176,10 +183,10 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
     vertexStr = vertexName + ", " + execDuration + ", " + readRecords + ", " + writeRecords
 
     statsFile.write(
-        queryID + "," + inputTopicName + "," + str(k) + "," + str(cellLength) + "," + str(gridRows) + "," + str(
-            gridColumns) + "," + str(wInterval) + "," + str(wStep) + "," + vertexStr + "\n")
-    print(queryID + "," + inputTopicName + "," + str(k) + "," + str(cellLength) + "," + str(gridRows) + "," + str(
-        gridColumns) + "," + str(wInterval) + "," + str(wStep) + "," + vertexStr)
+        queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(
+            parallelism) + "," + str(threshold) + "," + str(numQueryTrajectories) + "," + earlyAbandoning + "," + vertexStr + "\n")
+    print(queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(
+            parallelism) + "," + str(threshold) + "," + str(numQueryTrajectories) + "," + earlyAbandoning + "," + vertexStr)
 
     statsFile.flush()
     statsFile.close()
