@@ -2,11 +2,11 @@ from FlinkRESTAPIMethods import *
 
 
 def main():
-    base_url = "http://localhost:29999/"
+    base_url = "http://localhost:8081/"
     x = getAllJars(base_url)
 
-    jar_id = "36381fe0-4cb1-469f-8b70-a08e82d0ae53_GeoFlinkProject-0.2.jar"
-    "d0cca369-57eb-4d7a-a7b2-9fdee250fad7_GeoFlinkProject-0.2.jar"
+    jar_id = "92598495-1dbe-43ea-abb8-1608ecc30456_GeoFlinkProject-0.2.jar"
+
 
     experimentFrequency = 5
     executionTimeSeconds = 120
@@ -19,12 +19,12 @@ def main():
     # 2045 IncrementalTumblingPanesPartialsTRangeQuery
     # 2046 IncrementalTumblingPanesPartialsLazyTRangeQuery
 
-    rangeQueryIDList = ["2041", "2042", "2043", "2044", "2045", "2046"]
-    wIntervalList = [5, 50, 100, 150, 200]
+    rangeQueryIDList = ["2101"]
+    wIntervalList = [5000, 10000]
 
-    inputTopicName = "SpatialTrajs1000IDs100Million"
+    inputTopicName = "PortugalTaxiTrajs"
     outputTopicName = ""
-    parallelism = 30
+    parallelism = 5
 
     gridMinX = 0
     gridMinY = 0
@@ -34,7 +34,7 @@ def main():
     gridColumns = 100
     k = 1000
     wInterval = 5
-    wStep = 5
+    wStep = 50
 
     outputFilePathAndName = "output/TStreamIncrementalQueryExperiments.csv"
     logFilePathAndName = "logs/TStreamIncrementalQueryExperiments_log.csv"
@@ -51,7 +51,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                           gridMinX, gridMinY, cellLength, gridRows, gridColumns, experimentFrequency,
                           executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
                           outputFilePathAndName, logFilePathAndName):
-    bootStrapServers = "172.16.0.64:9092, 172.16.0.81:9092"
+    bootStrapServers = "localhost:9092"
 
     executionCostList = []
     numberRecordList = []
