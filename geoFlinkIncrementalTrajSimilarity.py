@@ -2,28 +2,34 @@ from FlinkRESTAPIMethods import *
 
 
 def main():
-    base_url = "http://localhost:8081/"
+    #base_url = "http://localhost:8081/"
+    base_url = "http://localhost:29999/"
     x = getAllJars(base_url)
 
-    jar_id = "92598495-1dbe-43ea-abb8-1608ecc30456_GeoFlinkProject-0.2.jar"
+    jar_id = "0d207a21-56a7-4442-80b7-b3b466a15805_GeoFlinkProject-0.2.jar"  #(cluster)
+    #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
     experimentFrequency = 3
-    executionTimeSeconds = 10
-    waitBetweenExecutionsSec = 10
+    executionTimeSeconds = 180
+    waitBetweenExecutionsSec = 120
 
     # 2101 TrajectorySimilarityQuery
 
     rangeQueryIDList = ["2101"]
     wIntervalList = [2000, 4000, 6000, 8000, 10000]
     wSlideStepList = [1, 5, 10, 15, 20, 25]
-    parallelismList = [1, 10, 20, 30]
+    parallelismList = [10, 20, 30]
     thresholdList = [0.00001, 0.00005, 0.0001]
     earlyAbandoningList = ["true"]
     numQueryTrajectoriesList = [100, 200, 300, 400, 500]
     algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "IncrementalMBR", "IncrementalNormalizedMBR"]
     inputTopicName = "PortugalTaxiTrajs"
     outputTopicName = "PortugalTaxiTrajOutput"
-    bootStrapServers = "localhost:9092"
+    queryTrajectoriesDirectory = "/home/ubuntu/flink/flink-1.16.0/conf/queryTrajectories/" #(cluster)
+    #queryTrajectoriesDirectory = "/data/NFS/shaikh/queryTrajectories/"  # (cluster)
+    #queryTrajectoriesDirectory = "/data1/datasets/2D_Spatial/PortugalTaxiData_PKDD15/queryTrajectories/" #(local cluster)
+    #bootStrapServers = "localhost:9092" #(local cluster)
+    bootStrapServers = "172.16.0.64:9092, 172.16.0.81:9092" #(cluster)
 
     gridMinX = 0
     gridMinY = 0
@@ -33,28 +39,118 @@ def main():
     gridColumns = 100
     k = 1000
 
-    outputFilePathAndName = "output/TStreamIncrementalTrajSimilarityExperiments.csv"
-    logFilePathAndName = "logs/TStreamIncrementalTrajSimilarityExperiments_log.csv"
+    outputFilePathAndName = "output/IncrTrajSimilarityExperiments.csv"
+    logFilePathAndName = "logs/IncrTrajSimilarityExperiments_log.csv"
 
-    for queryID in rangeQueryIDList:
-        for earlyAbandoning in earlyAbandoningList:
-            for wInterval in wIntervalList:
-                for wStep in wSlideStepList:
-                    for parallelism in parallelismList:
-                        for threshold in thresholdList:
-                            for numQueryTrajectories in numQueryTrajectoriesList:
-                                for algorithm in algorithmList:
+    # Default Values for Portugal Taxi Data
+    # wInterval = 5000
+    # wStep = 5
+    # parallelism = 30
+    # threshold = 0.00005
+    # numQueryTrajectories = 300
+    # earlyAbandoning = "true"
 
-                                    executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
-                                                          gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                                          numQueryTrajectories, algorithm, earlyAbandoning, experimentFrequency,
-                                                          executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
-                                                          outputFilePathAndName, logFilePathAndName, bootStrapServers)
+    for algorithm in algorithmList:
+        for numQueryTrajectories in numQueryTrajectoriesList:
+
+            # Default Values for Portugal Taxi Data
+            queryID = "2101"
+            wInterval = 5000
+            wStep = 5
+            parallelism = 30
+            threshold = 0.00005
+            earlyAbandoning = "true"
+
+            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
+                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                  numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, experimentFrequency,
+                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+
+    for algorithm in algorithmList:
+        for wInterval in wIntervalList:
+
+            # Default Values for Portugal Taxi Data
+            queryID = "2101"
+            wStep = 5
+            parallelism = 30
+            threshold = 0.00005
+            numQueryTrajectories = 300
+            earlyAbandoning = "true"
+
+            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
+                                  dateFormat,
+                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                  numQueryTrajectories, algorithm, earlyAbandoning,
+                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
+                                  base_url, jar_id,
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+
+    for algorithm in algorithmList:
+        for wStep in wSlideStepList:
+
+            # Default Values for Portugal Taxi Data
+            queryID = "2101"
+            wInterval = 5000
+            parallelism = 30
+            threshold = 0.00005
+            numQueryTrajectories = 300
+            earlyAbandoning = "true"
+
+            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
+                                  dateFormat,
+                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                  numQueryTrajectories, algorithm, earlyAbandoning,
+                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
+                                  base_url, jar_id,
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+
+    for algorithm in algorithmList:
+        for parallelism in parallelismList:
+
+            # Default Values for Portugal Taxi Data
+            queryID = "2101"
+            wInterval = 5000
+            wStep = 5
+            threshold = 0.00005
+            numQueryTrajectories = 300
+            earlyAbandoning = "true"
+
+            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
+                                  dateFormat,
+                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                  numQueryTrajectories, algorithm, earlyAbandoning,
+                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
+                                  base_url, jar_id,
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+
+    for algorithm in algorithmList:
+        for threshold in thresholdList:
+
+            # Default Values for Portugal Taxi Data
+            queryID = "2101"
+            wInterval = 5000
+            wStep = 5
+            parallelism = 30
+            numQueryTrajectories = 300
+            earlyAbandoning = "true"
+
+            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
+                                  dateFormat,
+                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                  numQueryTrajectories, algorithm, earlyAbandoning,
+                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
+                                  base_url, jar_id,
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
 
 
 def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
                                                           gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                                          numQueryTrajectories, algorithm, earlyAbandoning, experimentFrequency,
+                                                          numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, experimentFrequency,
                                                           executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
                                                           outputFilePathAndName, logFilePathAndName, bootStrapServers):
 
@@ -71,6 +167,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
     logFile = openFile(logFilePathAndName)
 
     i = 0
+
     while i < experimentFrequency:
         parameters = {"programArgsList": ["-Dgeoflink.clusterMode=true",
                                           "-Dgeoflink.kafkaBootStrapServers=" + bootStrapServers,
@@ -86,18 +183,19 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                           "-Dgeoflink.query.k=" + str(k),
                                           "-Dgeoflink.window.interval=" + str(wInterval),
                                           "-Dgeoflink.window.step=" + str(wStep),
-                                          "-Dgeoflink.trajectorySimilarity.threshold=" + str(threshold),
-                                          "-Dgeoflink.trajectorySimilarity.algorithm=" + algorithm,
-                                          "-Dgeoflink.trajectorySimilarity.numQueryTrajectories=" + str(numQueryTrajectories),
-                                          "-Dgeoflink.trajectorySimilarity.earlyAbandoning=" + earlyAbandoning
+                                          "-Dgeoflink.query.trajectorySimilarity.threshold=" + str(threshold),
+                                          "-Dgeoflink.query.trajectorySimilarity.algorithm=" + algorithm,
+                                          "-Dgeoflink.query.trajectorySimilarity.queryTrajectoriesDirectory=" + queryTrajectoriesDirectory,
+                                          "-Dgeoflink.query.trajectorySimilarity.numQueryTrajectories=" + str(numQueryTrajectories),
+                                          "-Dgeoflink.query.trajectorySimilarity.earlyAbandoning=" + earlyAbandoning
                                           ]}
 
         x = submitJob(base_url, jar_id, parameters)
 
         if x.status_code == 200:
-            print(str(datetime.now()) + " Job submitted: " +
-                  queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(parallelism) + "," + str(threshold)
-                  + "," + str(numQueryTrajectories) + "," + earlyAbandoning + ", Frequency " + str(i))
+            print(str(datetime.now()) + " *** Job submitted *** QueryID: " +
+                  queryID + ", inputTopicName: " + inputTopicName + ", algorithm: " + algorithm + ", WinSize: " + str(wInterval) + ", WinStep: " + str(wStep) + ", Parallelism: " + str(parallelism) + ", Threshold: " + str(threshold)
+                  + ", NumQueryTrajs: " + str(numQueryTrajectories) + ", EarlyAbandoning: " + earlyAbandoning + ", Frequency: " + str(i))
             logFile.write(str(datetime.now()) + " Job submitted: " +
                   queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(parallelism) + "," + str(threshold)
                   + "," + str(numQueryTrajectories) + "," + earlyAbandoning + ", Frequency " + str(i) + "\n")
@@ -129,7 +227,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
         for vertex in jsonTxt["vertices"]:
             actualExecutionDuration = json.dumps(vertex['duration'], indent=4)
 
-        if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (executionTimeSeconds * 1000):
+        if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (executionTimeSeconds * 1000 - 1000):
             time.sleep(waitBetweenExecutionsSec)
             continue
 
