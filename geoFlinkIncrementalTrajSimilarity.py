@@ -6,12 +6,12 @@ def main():
     base_url = "http://localhost:29999/"
     x = getAllJars(base_url)
 
-    jar_id = "0d207a21-56a7-4442-80b7-b3b466a15805_GeoFlinkProject-0.2.jar"  #(cluster)
+    jar_id = "efdfb919-bb8e-4e11-b771-d485e00c27a8_GeoFlinkProject-0.2.jar"  #(cluster)
     #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
     experimentFrequency = 3
     executionTimeSeconds = 180
-    waitBetweenExecutionsSec = 120
+    waitBetweenExecutionsSec = 30
 
     # 2101 TrajectorySimilarityQuery
 
@@ -87,6 +87,7 @@ def main():
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
 
+
     for algorithm in algorithmList:
         for wStep in wSlideStepList:
 
@@ -94,26 +95,6 @@ def main():
             queryID = "2101"
             wInterval = 5000
             parallelism = 30
-            threshold = 0.00005
-            numQueryTrajectories = 300
-            earlyAbandoning = "true"
-
-            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
-                                  dateFormat,
-                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                  numQueryTrajectories, algorithm, earlyAbandoning,
-                                  queryTrajectoriesDirectory, experimentFrequency,
-                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
-                                  base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
-
-    for algorithm in algorithmList:
-        for parallelism in parallelismList:
-
-            # Default Values for Portugal Taxi Data
-            queryID = "2101"
-            wInterval = 5000
-            wStep = 5
             threshold = 0.00005
             numQueryTrajectories = 300
             earlyAbandoning = "true"
@@ -146,6 +127,28 @@ def main():
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
+
+    for algorithm in algorithmList:
+        for parallelism in parallelismList:
+
+            # Default Values for Portugal Taxi Data
+            queryID = "2101"
+            wInterval = 5000
+            wStep = 5
+            threshold = 0.00005
+            numQueryTrajectories = 300
+            earlyAbandoning = "true"
+
+            executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
+                                  dateFormat,
+                                  gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                                  numQueryTrajectories, algorithm, earlyAbandoning,
+                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
+                                  base_url, jar_id,
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+
+
 
 
 def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,

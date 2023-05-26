@@ -8,15 +8,11 @@ def main():
     # x = uploadJar(base_url, path)
     # x = deleteJar(base_url, jar_id)
 
-    jar_id = "b042736e-edce-474c-a713-458debb8a523_SpatialDataGen-0.1.jar"
+    jar_id = "ec16371b-e035-41b7-bdb9-2511a3d92822_SpatialDataGen-0.1.jar"
 
-    experimentFrequency = 2
-    executionTimeSeconds = 120
-    waitBetweenExecutionsSec = 60
-
-    outputTopicName = "SpatialTrajs1000IDs20Million"
+    outputTopicName = "GaussianRW_Obj1000_TI15_100M"
     bootStrapServers = "172.16.0.64:9092, 172.16.0.81:9092"
-    dataRows = "100000"
+    dataRows = "100000000"
     # dataObjIDRange = "1000"
     queryRandomOption = "gaussianRW"
     queryDatatypeOption = "point"
