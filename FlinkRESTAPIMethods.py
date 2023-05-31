@@ -38,6 +38,12 @@ def deleteJar(base_url, jar_id):
     x = requests.delete(url, data=mydata)
     return x
 
+def shutdownCluster(base_url):
+    url = base_url + "cluster"
+    mydata = '{}'
+    x = requests.delete(url, data=mydata)
+    return x
+
 
 def getAllJobsOverview(base_url):
     url = base_url + "jobs/overview"
@@ -71,7 +77,15 @@ def getFlinkClusterOverview(base_url):
     url = base_url + "overview"
     mydata = '{}'
     x = requests.get(url, data=mydata)
-    return x
+    return x.json()
+
+def getFlinkClusterTotalSlots(base_url):
+    url = base_url + "overview"
+    mydata = '{}'
+    x = requests.get(url, data=mydata)
+    jsonData = x.json()
+
+    return jsonData['slots-total']
 
 
 def openFile(filePathAndName):

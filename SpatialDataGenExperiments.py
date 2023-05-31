@@ -10,6 +10,7 @@ def main():
 
     jar_id = "ec16371b-e035-41b7-bdb9-2511a3d92822_SpatialDataGen-0.1.jar"
 
+
     outputTopicName = "GaussianRW_Obj1000_TI15_100M"
     bootStrapServers = "172.16.0.64:9092, 172.16.0.81:9092"
     dataRows = "100000000"

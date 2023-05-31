@@ -1,16 +1,17 @@
 from FlinkRESTAPIMethods import *
+import subprocess
 
 
 def main():
     #base_url = "http://localhost:8081/"
     base_url = "http://localhost:29999/"
-    x = getAllJars(base_url)
+    #clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
 
-    jar_id = "efdfb919-bb8e-4e11-b771-d485e00c27a8_GeoFlinkProject-0.2.jar"  #(cluster)
+    jar_id = ""  #(cluster)
     #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
-    experimentFrequency = 3
-    executionTimeSeconds = 180
+    experimentFrequency = 2
+    executionTimeSeconds = 30
     waitBetweenExecutionsSec = 30
 
     # 2101 TrajectorySimilarityQuery
@@ -19,16 +20,23 @@ def main():
     wIntervalList = [2000, 4000, 6000, 8000, 10000]
     wSlideStepList = [1, 5, 10, 15, 20, 25]
     parallelismList = [10, 20, 30]
-    thresholdList = [0.00001, 0.00005, 0.0001]
+    #thresholdList = [0.00001, 0.00005, 0.0001]
+    thresholdList = [0.000001, 0.000005, 0.00001]
     earlyAbandoningList = ["true"]
-    numQueryTrajectoriesList = [100, 200, 300, 400, 500]
-    algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "IncrementalMBR", "IncrementalNormalizedMBR"]
-    inputTopicName = "PortugalTaxiTrajs"
-    outputTopicName = "PortugalTaxiTrajOutput"
-    queryTrajectoriesDirectory = "/home/ubuntu/flink/flink-1.16.0/conf/queryTrajectories/" #(cluster)
+    #numQueryTrajectoriesList = [100, 200, 300, 400, 500]
+    numQueryTrajectoriesList = [10, 20, 30, 40, 50]
+    algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR", "IncrementalNormalizedMBROverlapping"]
+    #algorithmList = ["MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow",
+                     #"NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
+                     #"IncrementalNormalizedMBROverlapping"]
+    inputTopicName = "GaussianRW_Obj1000_TI15_100M"
+    outputTopicName = "GaussianRW_Obj1000_TI15_100M_Output"
+    #queryTrajectoriesDirectory = "/mnt/flink/queryTrajectories/" #(cluster)
+    queryTrajectoriesDirectory = "/mnt/flink/SyntheticQueryTrajectories/"  # (cluster)
     #queryTrajectoriesDirectory = "/data/NFS/shaikh/queryTrajectories/"  # (cluster)
     #queryTrajectoriesDirectory = "/data1/datasets/2D_Spatial/PortugalTaxiData_PKDD15/queryTrajectories/" #(local cluster)
     #bootStrapServers = "localhost:9092" #(local cluster)
+    queryTrajectoriesFilesExtension = "txt"
     bootStrapServers = "172.16.0.64:9092, 172.16.0.81:9092" #(cluster)
 
     gridMinX = 0
@@ -38,8 +46,15 @@ def main():
     gridRows = 100
     gridColumns = 100
     k = 1000
+    queryTrajectorySlidePoints = 1
 
-    outputFilePathAndName = "output/IncrTrajSimilarityExperiments.csv"
+    subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+
+    # shutdownCluster(base_url)
+    time.sleep(30)  # wait before starting cluster again
+
+    outputFilePathAndName = "output/IncrTrajSimilarityExperiments_GaussianRW.csv"
     logFilePathAndName = "logs/IncrTrajSimilarityExperiments_log.csv"
 
     # Default Values for Portugal Taxi Data
@@ -50,9 +65,8 @@ def main():
     # numQueryTrajectories = 300
     # earlyAbandoning = "true"
 
-    for algorithm in algorithmList:
-        for numQueryTrajectories in numQueryTrajectoriesList:
-
+    for numQueryTrajectories in numQueryTrajectoriesList:
+        for algorithm in algorithmList:
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wInterval = 5000
@@ -63,7 +77,7 @@ def main():
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                  numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, experimentFrequency,
+                                  numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
 
@@ -82,7 +96,7 @@ def main():
                                   dateFormat,
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
                                   numQueryTrajectories, algorithm, earlyAbandoning,
-                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
@@ -103,7 +117,7 @@ def main():
                                   dateFormat,
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
                                   numQueryTrajectories, algorithm, earlyAbandoning,
-                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
@@ -123,7 +137,7 @@ def main():
                                   dateFormat,
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
                                   numQueryTrajectories, algorithm, earlyAbandoning,
-                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
@@ -143,7 +157,7 @@ def main():
                                   dateFormat,
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
                                   numQueryTrajectories, algorithm, earlyAbandoning,
-                                  queryTrajectoriesDirectory, experimentFrequency,
+                                  queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers)
@@ -153,7 +167,7 @@ def main():
 
 def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
                                                           gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                                          numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, experimentFrequency,
+                                                          numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                                           executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
                                                           outputFilePathAndName, logFilePathAndName, bootStrapServers):
 
@@ -172,6 +186,21 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
     i = 0
 
     while i < experimentFrequency:
+
+        # start cluster
+        subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/start-cluster.sh", shell=True,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        # wait for starting the cluster
+        time.sleep(30)
+
+        # upload the jar after starting the cluster
+        uploadJar(base_url, "/data1/development/Flink/Projects/PrivateSpatialFlink/target/GeoFlinkProject-0.2.jar")
+        # wait for the jar to upload
+        time.sleep(10)
+
+        x = getAllJars(base_url)
+        jar_id = x.json()['files'][0]['id']
+
         parameters = {"programArgsList": ["-Dgeoflink.clusterMode=true",
                                           "-Dgeoflink.kafkaBootStrapServers=" + bootStrapServers,
                                           "-Dgeoflink.parallelism=" + str(parallelism),
@@ -189,7 +218,9 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                           "-Dgeoflink.query.trajectorySimilarity.threshold=" + str(threshold),
                                           "-Dgeoflink.query.trajectorySimilarity.algorithm=" + algorithm,
                                           "-Dgeoflink.query.trajectorySimilarity.queryTrajectoriesDirectory=" + queryTrajectoriesDirectory,
+                                          "-Dgeoflink.query.trajectorySimilarity.queryTrajectoriesFilesExtension=" + queryTrajectoriesFilesExtension,
                                           "-Dgeoflink.query.trajectorySimilarity.numQueryTrajectories=" + str(numQueryTrajectories),
+                                          "-Dgeoflink.query.trajectorySimilarity.queryTrajectorySlidePoints=" + str(1),
                                           "-Dgeoflink.query.trajectorySimilarity.earlyAbandoning=" + earlyAbandoning
                                           ]}
 
@@ -231,7 +262,12 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
             actualExecutionDuration = json.dumps(vertex['duration'], indent=4)
 
         if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (executionTimeSeconds * 1000 - 1000):
+            print("EXECUTION TIME INSUFFICIENT")
             time.sleep(waitBetweenExecutionsSec)
+            subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
+                             shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            time.sleep(30)  # wait before starting cluster again
             continue
 
         for vertex in jsonTxt["vertices"]:
@@ -249,10 +285,20 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
             print(str(datetime.now()) + str(json.dumps(y.json()['state'], indent=4)))
             logFile.write(str(datetime.now()) + str(json.dumps(y.json()['state'], indent=4)) + "\n")
             if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED":
-                break
+                print("STATE FAILED")
+                time.sleep(waitBetweenExecutionsSec)
+                subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
+                                 shell=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                time.sleep(30)  # wait before starting cluster again
+                continue
 
         # wait at-least waitBetweenExecutionsSec seconds before starting next job
         time.sleep(waitBetweenExecutionsSec)
+
+        subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        time.sleep(40)  # wait before starting cluster again
 
         # incrementing loop variable
         i += 1
@@ -292,7 +338,6 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
     statsFile.flush()
     statsFile.close()
     logFile.flush()
-
     logFile.close()
 
 
