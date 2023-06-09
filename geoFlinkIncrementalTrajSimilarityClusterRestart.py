@@ -7,11 +7,11 @@ def main():
     base_url = "http://localhost:29999/"
     #clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
 
-    jar_id = "8c56fa7e-ca27-4cd8-817d-070665500004_GeoFlinkProject-0.2.jar"  #(cluster)
+    jar_id = ""  #(cluster)
     #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
-    experimentFrequency = 1
-    executionTimeSeconds = 60
+    experimentFrequency = 2
+    executionTimeSeconds = 30
     waitBetweenExecutionsSec = 30
 
     # 2101 TrajectorySimilarityQuery
@@ -21,11 +21,11 @@ def main():
     wSlideStepList = [1, 5, 10, 15, 20, 25]
     parallelismList = [10, 20, 30]
     #thresholdList = [0.00001, 0.00005, 0.0001]
-    thresholdList = [0.0000001, 0.0000005, 0.000001]
-    #thresholdList = [1, 5, 10]
+    #thresholdList = [0.00001, 0.00005, 0.0001]
+    thresholdList = [1, 5, 10]
     earlyAbandoningList = ["true"]
     #numQueryTrajectoriesList = [100, 200, 300, 400, 500]
-    numQueryTrajectoriesList = [5, 20, 30, 40, 50]
+    numQueryTrajectoriesList = [1, 20, 30, 40, 50]
     #algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR", "IncrementalNormalizedMBROverlapping"]
     algorithmList = ["NormalizedMBRSlidingFullWindow",
                      "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
@@ -53,9 +53,14 @@ def main():
     k = 1000
     queryTrajectorySlidePoints = 1
 
+    subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
+                      stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
-    outputFilePathAndName = "output/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M.csv"
-    logFilePathAndName = "logs/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M_log.csv"
+    # shutdownCluster(base_url)
+    time.sleep(30)  # wait before starting cluster again
+
+    outputFilePathAndName = "output/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M_QueryTraj.csv"
+    logFilePathAndName = "logs/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M_QueryTraj_log.csv"
 
     # Default Values for Portugal Taxi Data
     # wInterval = 5000
@@ -65,14 +70,6 @@ def main():
     # numQueryTrajectories = 300
     # earlyAbandoning = "true"
 
-    # Default Values for Synthetic Madagascar Dataset
-    # wInterval = 5000
-    # wStep = 5
-    # parallelism = 30
-    # threshold = 0.0000001
-    # numQueryTrajectories = 20
-    # earlyAbandoning = "true"
-
     for numQueryTrajectories in numQueryTrajectoriesList:
         for algorithm in algorithmList:
             # Default Values for Portugal Taxi Data
@@ -80,7 +77,7 @@ def main():
             wInterval = 5000
             wStep = 5
             parallelism = 30
-            threshold = 0.0000001
+            threshold = 0.00005
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
@@ -96,8 +93,8 @@ def main():
             queryID = "2101"
             wStep = 5
             parallelism = 30
-            threshold = 0.0000001
-            numQueryTrajectories = 20
+            threshold = 0.00005
+            numQueryTrajectories = 300
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
@@ -115,10 +112,10 @@ def main():
 
             # Default Values for Portugal Taxi Data
             queryID = "2101"
-            wStep = 5
+            wInterval = 5000
             parallelism = 30
-            threshold = 0.0000001
-            numQueryTrajectories = 20
+            threshold = 0.00005
+            numQueryTrajectories = 300
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
@@ -138,7 +135,7 @@ def main():
             wInterval = 5000
             wStep = 5
             parallelism = 30
-            numQueryTrajectories = 20
+            numQueryTrajectories = 300
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
@@ -157,8 +154,8 @@ def main():
             queryID = "2101"
             wInterval = 5000
             wStep = 5
-            threshold = 0.0000001
-            numQueryTrajectories = 20
+            threshold = 0.00005
+            numQueryTrajectories = 300
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep,
@@ -194,6 +191,20 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
     i = 0
 
     while i < experimentFrequency:
+
+        # start cluster
+        subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/start-cluster.sh", shell=True,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        # wait for starting the cluster
+        time.sleep(30)
+
+        # upload the jar after starting the cluster
+        uploadJar(base_url, "/data1/development/Flink/Projects/PrivateSpatialFlink/target/GeoFlinkProject-0.2.jar")
+        # wait for the jar to upload
+        time.sleep(10)
+
+        x = getAllJars(base_url)
+        jar_id = x.json()['files'][0]['id']
 
         parameters = {"programArgsList": ["-Dgeoflink.clusterMode=true",
                                           "-Dgeoflink.kafkaBootStrapServers=" + bootStrapServers,
@@ -257,6 +268,11 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
 
         if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (executionTimeSeconds * 1000 - 1000):
             print("EXECUTION TIME INSUFFICIENT")
+            time.sleep(waitBetweenExecutionsSec)
+            subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
+                             shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            time.sleep(30)  # wait before starting cluster again
             continue
 
         for vertex in jsonTxt["vertices"]:
@@ -275,7 +291,19 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
             logFile.write(str(datetime.now()) + str(json.dumps(y.json()['state'], indent=4)) + "\n")
             if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED":
                 print("STATE FAILED")
+                time.sleep(waitBetweenExecutionsSec)
+                subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
+                                 shell=True,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                time.sleep(30)  # wait before starting cluster again
                 continue
+
+        # wait at-least waitBetweenExecutionsSec seconds before starting next job
+        time.sleep(waitBetweenExecutionsSec)
+
+        subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        time.sleep(40)  # wait before starting cluster again
 
         # incrementing loop variable
         i += 1
