@@ -7,11 +7,11 @@ def main():
     base_url = "http://localhost:29999/"
     #clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
 
-    jar_id = "8c56fa7e-ca27-4cd8-817d-070665500004_GeoFlinkProject-0.2.jar"  #(cluster)
+    jar_id = "ec11853a-591f-41cd-977b-8484ee8cd241_GeoFlinkProject-0.2.jar"  #(cluster)
     #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
     experimentFrequency = 1
-    executionTimeSeconds = 60
+    executionTimeSeconds = 90
     waitBetweenExecutionsSec = 30
 
     # 2101 TrajectorySimilarityQuery
@@ -21,15 +21,16 @@ def main():
     wSlideStepList = [1, 5, 10, 15, 20, 25]
     parallelismList = [10, 20, 30]
     #thresholdList = [0.00001, 0.00005, 0.0001]
-    thresholdList = [0.0000001, 0.0000005, 0.000001]
+    thresholdList = [0, 0.00005, 0.005]
     #thresholdList = [1, 5, 10]
     earlyAbandoningList = ["true"]
     #numQueryTrajectoriesList = [100, 200, 300, 400, 500]
-    numQueryTrajectoriesList = [5, 20, 30, 40, 50]
-    #algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR", "IncrementalNormalizedMBROverlapping"]
-    algorithmList = ["NormalizedMBRSlidingFullWindow",
-                     "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
-                     "IncrementalNormalizedMBROverlapping"]
+    numQueryTrajectoriesList = [10, 20, 30, 40, 50]
+    # algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR", "IncrementalNormalizedMBROverlapping"]
+    algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "IncrementalMBR", "IncrementalNormalizedMBR"]
+    # algorithmList = ["NormalizedMBRSlidingFullWindow",
+    #                  "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
+    #                  "IncrementalNormalizedMBROverlapping"]
     #algorithmList = ["MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow",
                      #"NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
                      #"IncrementalNormalizedMBROverlapping"]
@@ -37,7 +38,7 @@ def main():
     outputTopicName = "NetworkMadagascar_Obj200_TI15_18M_Output"
     #queryTrajectoriesDirectory = "/mnt/flink/queryTrajectories/" #(cluster)
     #queryTrajectoriesDirectory = "/mnt/flink/SyntheticQueryTrajectories/"  # (cluster)
-    queryTrajectoriesDirectory = "/mnt/flink/sortedNetworkMadagascar_Obj200_TI15_18M_QueryTraj/"
+    queryTrajectoriesDirectory = "/mnt/flink/sortedNetworkMadagascar_Obj200_TI15_18M_QueryTraj_Short/"
     #queryTrajectoriesDirectory = "/data/NFS/shaikh/queryTrajectories/"  # (cluster)
     #queryTrajectoriesDirectory = "/data1/datasets/2D_Spatial/PortugalTaxiData_PKDD15/queryTrajectories/" #(local cluster)
     #bootStrapServers = "localhost:9092" #(local cluster)
@@ -46,7 +47,8 @@ def main():
 
     gridMinX = 0
     gridMinY = 0
-    dateFormat = "yyyy-MM-dd HH:mm:ss"
+    #dateFormat = "yyyy-MM-dd HH:mm:ss"
+    dateFormat = "null"
     cellLength = 1
     gridRows = 100
     gridColumns = 100
@@ -69,18 +71,19 @@ def main():
     # wInterval = 5000
     # wStep = 5
     # parallelism = 30
-    # threshold = 0.0000001
+    # threshold = 0.0001
     # numQueryTrajectories = 20
     # earlyAbandoning = "true"
 
-    for numQueryTrajectories in numQueryTrajectoriesList:
-        for algorithm in algorithmList:
+
+    for algorithm in algorithmList:
+        for numQueryTrajectories in numQueryTrajectoriesList:
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wInterval = 5000
             wStep = 5
             parallelism = 30
-            threshold = 0.0000001
+            threshold = 0.00005
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
@@ -96,7 +99,7 @@ def main():
             queryID = "2101"
             wStep = 5
             parallelism = 30
-            threshold = 0.0000001
+            threshold = 0.00005
             numQueryTrajectories = 20
             earlyAbandoning = "true"
 
@@ -117,7 +120,7 @@ def main():
             queryID = "2101"
             wStep = 5
             parallelism = 30
-            threshold = 0.0000001
+            threshold = 0.00005
             numQueryTrajectories = 20
             earlyAbandoning = "true"
 
@@ -157,7 +160,7 @@ def main():
             queryID = "2101"
             wInterval = 5000
             wStep = 5
-            threshold = 0.0000001
+            threshold = 0.00005
             numQueryTrajectories = 20
             earlyAbandoning = "true"
 
@@ -209,6 +212,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                           "-Dgeoflink.query.k=" + str(k),
                                           "-Dgeoflink.window.interval=" + str(wInterval),
                                           "-Dgeoflink.window.step=" + str(wStep),
+                                          "-Dgeoflink.window.timeUnit=" + "millis",
                                           "-Dgeoflink.query.trajectorySimilarity.threshold=" + str(threshold),
                                           "-Dgeoflink.query.trajectorySimilarity.algorithm=" + algorithm,
                                           "-Dgeoflink.query.trajectorySimilarity.queryTrajectoriesDirectory=" + queryTrajectoriesDirectory,

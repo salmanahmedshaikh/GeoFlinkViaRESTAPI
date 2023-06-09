@@ -7,10 +7,10 @@ def main():
     base_url = "http://localhost:29999/"
     #clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
 
-    jar_id = ""  #(cluster)
+    jar_id = "ec11853a-591f-41cd-977b-8484ee8cd241_GeoFlinkProject-0.2.jar"  #(cluster)
     #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
-    experimentFrequency = 2
+    experimentFrequency = 1
     executionTimeSeconds = 30
     waitBetweenExecutionsSec = 30
 
@@ -20,16 +20,16 @@ def main():
     wIntervalList = [2000, 4000, 6000, 8000, 10000]
     wSlideStepList = [1, 5, 10, 15, 20, 25]
     parallelismList = [10, 20, 30]
-    #thresholdList = [0.00001, 0.00005, 0.0001]
-    #thresholdList = [0.00001, 0.00005, 0.0001]
-    thresholdList = [1, 5, 10]
+    # thresholdList = [0.00001, 0.00005, 0.0001]
+    thresholdList = [0, 0.00005, 0.005]
+    # thresholdList = [1, 5, 10]
     earlyAbandoningList = ["true"]
-    #numQueryTrajectoriesList = [100, 200, 300, 400, 500]
-    numQueryTrajectoriesList = [1, 20, 30, 40, 50]
-    #algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR", "IncrementalNormalizedMBROverlapping"]
-    algorithmList = ["NormalizedMBRSlidingFullWindow",
-                     "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
-                     "IncrementalNormalizedMBROverlapping"]
+    # numQueryTrajectoriesList = [100, 200, 300, 400, 500]
+    numQueryTrajectoriesList = [10, 20, 30, 40, 50]
+    algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "IncrementalMBR", "IncrementalNormalizedMBR"]
+    # algorithmList = ["NormalizedMBRSlidingFullWindow",
+    #                  "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
+    #                  "IncrementalNormalizedMBROverlapping"]
     #algorithmList = ["MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow",
                      #"NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR",
                      #"IncrementalNormalizedMBROverlapping"]
@@ -220,11 +220,13 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                           "-Dgeoflink.query.k=" + str(k),
                                           "-Dgeoflink.window.interval=" + str(wInterval),
                                           "-Dgeoflink.window.step=" + str(wStep),
+                                          "-Dgeoflink.window.timeUnit=" + "millis",
                                           "-Dgeoflink.query.trajectorySimilarity.threshold=" + str(threshold),
                                           "-Dgeoflink.query.trajectorySimilarity.algorithm=" + algorithm,
                                           "-Dgeoflink.query.trajectorySimilarity.queryTrajectoriesDirectory=" + queryTrajectoriesDirectory,
                                           "-Dgeoflink.query.trajectorySimilarity.queryTrajectoriesFilesExtension=" + queryTrajectoriesFilesExtension,
-                                          "-Dgeoflink.query.trajectorySimilarity.numQueryTrajectories=" + str(numQueryTrajectories),
+                                          "-Dgeoflink.query.trajectorySimilarity.numQueryTrajectories=" + str(
+                                              numQueryTrajectories),
                                           "-Dgeoflink.query.trajectorySimilarity.queryTrajectorySlidePoints=" + str(1),
                                           "-Dgeoflink.query.trajectorySimilarity.earlyAbandoning=" + earlyAbandoning
                                           ]}
