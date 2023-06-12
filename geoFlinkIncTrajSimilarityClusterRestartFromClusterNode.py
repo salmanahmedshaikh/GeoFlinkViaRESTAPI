@@ -3,8 +3,8 @@ import subprocess
 
 
 def main():
-    #base_url = "http://localhost:8081/"
-    base_url = "http://localhost:29999/"
+    base_url = "http://localhost:8081/"
+    #base_url = "http://localhost:29999/"
     #clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
 
     jar_id = "fd2e1c78-597f-4ffa-aad4-7432391ce0d2_GeoFlinkProject-0.2.jar"  #(cluster)
@@ -14,8 +14,10 @@ def main():
     executionTimeSeconds = 90
     waitBetweenExecutionsSec = 30
 
+
     # 2101 TrajectorySimilarityQuery
 
+    totalClusterTaskSlots = 30
     rangeQueryIDList = ["2101"]
     wIntervalList = [2000, 4000, 6000, 8000, 10000]
     wSlideStepList = [1, 5, 10, 15, 20, 25]
@@ -56,7 +58,7 @@ def main():
     k = 1000
     queryTrajectorySlidePoints = 1
 
-    subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
+    subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
                       stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
     # shutdownCluster(base_url)
@@ -87,7 +89,7 @@ def main():
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
                                   numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
     for algorithm in algorithmList:
         for wInterval in wIntervalList:
@@ -107,7 +109,7 @@ def main():
                                   queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
 
     for algorithm in algorithmList:
@@ -128,7 +130,7 @@ def main():
                                   queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
     for algorithm in algorithmList:
         for threshold in thresholdList:
@@ -148,7 +150,7 @@ def main():
                                   queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
     for algorithm in algorithmList:
         for parallelism in parallelismList:
@@ -168,7 +170,7 @@ def main():
                                   queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism,
                                   base_url, jar_id,
-                                  outputFilePathAndName, logFilePathAndName, bootStrapServers)
+                                  outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
 
 
@@ -177,7 +179,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                                           gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
                                                           numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
                                                           executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
-                                                          outputFilePathAndName, logFilePathAndName, bootStrapServers):
+                                                          outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots):
 
     executionCostList = []
     numberRecordList = []
@@ -195,15 +197,21 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
 
     while i < experimentFrequency:
 
-        # start cluster
-        subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/start-cluster.sh", shell=True,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        # wait for starting the cluster
-        time.sleep(30)
+        currentClusterTaskslots = 0
+
+        # Checking if the complete cluster is started
+        while(currentClusterTaskslots != totalClusterTaskSlots):
+            # start cluster
+            subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/start-cluster.sh", shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            # wait for starting the cluster
+            time.sleep(30)
+            currentClusterTaskslots = getFlinkClusterTotalSlots(base_url)
 
         # upload the jar after starting the cluster
         # uploadJar(base_url, "/data1/development/Flink/Projects/PrivateSpatialFlink/target/GeoFlinkProject-0.2.jar") # Ubuntu
-        uploadJar(base_url, "/Users/salman/Documents/Development/program_jars/GeoFlinkProject-0.2.jar")  # Mac
+        # uploadJar(base_url, "/Users/salman/Documents/Development/program_jars/GeoFlinkProject-0.2.jar")  # Mac
+        uploadJar(base_url, "/mnt/flink/jars/GeoFlinkProject-0.2.jar") # Cluster
         # wait for the jar to upload
         time.sleep(10)
 
@@ -275,7 +283,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
         if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (executionTimeSeconds * 1000 - 1000):
             print("EXECUTION TIME INSUFFICIENT")
             time.sleep(waitBetweenExecutionsSec)
-            subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
+            subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
                              shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
             time.sleep(30)  # wait before starting cluster again
@@ -298,18 +306,18 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
             if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED":
                 print("STATE FAILED")
                 time.sleep(waitBetweenExecutionsSec)
-                subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
+                subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
                                  shell=True,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
                 time.sleep(30)  # wait before starting cluster again
                 continue
 
         # wait at-least waitBetweenExecutionsSec seconds before starting next job
-        time.sleep(waitBetweenExecutionsSec)
+        # time.sleep(waitBetweenExecutionsSec)
 
-        subprocess.Popen("ssh aaic-shk-flink001 ./../../mnt/flink/flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
+        subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-        time.sleep(40)  # wait before starting cluster again
+        time.sleep(30)  # wait before starting cluster again
 
         # incrementing loop variable
         i += 1
