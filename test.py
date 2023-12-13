@@ -4,30 +4,30 @@ import subprocess
 
 def main():
     base_url = "http://localhost:8081/"
-    #base_url = "http://localhost:29999/"
-    #clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
+    # base_url = "http://localhost:29999/"
+    # clusterDirectory = "/mnt/flink/flinkBinaries/flink-1.16.0/"
 
-    jar_id = "fd2e1c78-597f-4ffa-aad4-7432391ce0d2_GeoFlinkProject-0.2.jar"  #(cluster)
-    #jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
+    jar_id = "iccaee477-8156-4c35-8d64-6c38110e3eb4_GeoFlinkProject-0.2.jar"  # (cluster)
+    # jar_id = "d1381d82-c0d6-44e1-9723-f6976c7b4d55_GeoFlinkProject-0.2.jar"  #(local cluster)
 
-    experimentFrequency = 1
-    executionTimeSeconds = 90
+    experimentFrequency = 2
+    executionTimeSeconds = 120
     waitBetweenExecutionsSec = 30
-
 
     # 2101 TrajectorySimilarityQuery
 
     totalClusterTaskSlots = 30
     rangeQueryIDList = ["2101"]
-    wIntervalList = [2000, 4000, 6000, 8000, 10000]
-    wSlideStepList = [1, 5, 10, 15, 20, 25]
+    wIntervalList = [1000, 5000, 10000]
+    wSlideStepList = [1, 15, 30]
     parallelismList = [10, 20, 30]
     # thresholdList = [0.00001, 0.00005, 0.0001]
-    thresholdList = [0, 0.00005, 0.005]
+    thresholdList = [0, 0.00005, 0.05]
     # thresholdList = [1, 5, 10]
     earlyAbandoningList = ["true"]
-    # numQueryTrajectoriesList = [100, 200, 300, 400, 500]
-    numQueryTrajectoriesList = [10, 20, 30, 40, 50]
+    numQueryTrajectoriesList = [100, 300, 500]
+    # numQueryTrajectoriesList = [10, 20, 30, 40, 50]
+    # numQueryTrajectoriesList = [20, 30, 40, 50]
     # algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow", "NormalizedMBRSlidingFullWindowOverlapping", "IncrementalMBR", "IncrementalNormalizedMBR", "IncrementalNormalizedMBROverlapping"]
     algorithmList = ["DistributedNestedLoop", "MBRSlidingFullWindow", "NormalizedMBRSlidingFullWindow",
                      "IncrementalMBR", "IncrementalNormalizedMBR"]
@@ -53,18 +53,18 @@ def main():
     # dateFormat = "yyyy-MM-dd HH:mm:ss"
     dateFormat = "null"
     cellLength = 1
-    gridRows = 100
+    gridRows = 98
     gridColumns = 100
     k = 1000
     queryTrajectorySlidePoints = 1
 
     subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/stop-cluster.sh", shell=True,
-                      stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                     stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
     # shutdownCluster(base_url)
     time.sleep(30)  # wait before starting cluster again
 
-    outputFilePathAndName = "output/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M.csv"
+    outputFilePathAndName = "output/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M_2.csv"
     logFilePathAndName = "logs/IncrTrajSimilarityExperiments_NetworkMadagascar_Obj200_TI15_18M_log.csv"
 
     # Default Values for Portugal Taxi Data
@@ -80,20 +80,20 @@ def main():
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wInterval = 5000
-            wStep = 5
+            wStep = 1
             parallelism = 30
             threshold = 0.00005
             earlyAbandoning = "true"
 
             executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
                                   gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                  numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
+                                  numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory,
+                                  queryTrajectoriesFilesExtension, experimentFrequency,
                                   executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
     for algorithm in algorithmList:
         for wInterval in wIntervalList:
-
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wStep = 5
@@ -111,10 +111,8 @@ def main():
                                   base_url, jar_id,
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
-
     for algorithm in algorithmList:
         for wStep in wSlideStepList:
-
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wInterval = 5000
@@ -134,7 +132,6 @@ def main():
 
     for algorithm in algorithmList:
         for threshold in thresholdList:
-
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wInterval = 5000
@@ -154,7 +151,6 @@ def main():
 
     for algorithm in algorithmList:
         for parallelism in parallelismList:
-
             # Default Values for Portugal Taxi Data
             queryID = "2101"
             wInterval = 5000
@@ -173,14 +169,12 @@ def main():
                                   outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots)
 
 
-
-
 def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval, wStep, dateFormat,
-                                                          gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
-                                                          numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory, queryTrajectoriesFilesExtension, experimentFrequency,
-                                                          executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
-                                                          outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots):
-
+                          gridMinX, gridMinY, cellLength, gridRows, gridColumns, threshold,
+                          numQueryTrajectories, algorithm, earlyAbandoning, queryTrajectoriesDirectory,
+                          queryTrajectoriesFilesExtension, experimentFrequency,
+                          executionTimeSeconds, waitBetweenExecutionsSec, parallelism, base_url, jar_id,
+                          outputFilePathAndName, logFilePathAndName, bootStrapServers, totalClusterTaskSlots):
     executionCostList = []
     numberRecordList = []
     vertexNameList = []
@@ -200,10 +194,10 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
         currentClusterTaskslots = 0
 
         # Checking if the complete cluster is started
-        while(currentClusterTaskslots != totalClusterTaskSlots):
+        while (currentClusterTaskslots != totalClusterTaskSlots):
             # start cluster
             subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/start-cluster.sh", shell=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
             # wait for starting the cluster
             time.sleep(30)
             currentClusterTaskslots = getFlinkClusterTotalSlots(base_url)
@@ -211,7 +205,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
         # upload the jar after starting the cluster
         # uploadJar(base_url, "/data1/development/Flink/Projects/PrivateSpatialFlink/target/GeoFlinkProject-0.2.jar") # Ubuntu
         # uploadJar(base_url, "/Users/salman/Documents/Development/program_jars/GeoFlinkProject-0.2.jar")  # Mac
-        uploadJar(base_url, "/mnt/flink/jars/GeoFlinkProject-0.2.jar") # Cluster
+        uploadJar(base_url, "/mnt/flink/jars/GeoFlinkProject-0.2.jar")  # Cluster
         # wait for the jar to upload
         time.sleep(10)
 
@@ -230,7 +224,7 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
                                           "-Dgeoflink.inputStream1.gridColumns=" + str(gridColumns),
                                           "-Dgeoflink.query.option=" + queryID,
                                           "-Dgeoflink.query.k=" + str(k),
-                                          "-Dgeoflink.query.stateVarTTL=" + str(100),
+                                          "-Dgeoflink.query.stateVarTTL=" + str(50),
                                           "-Dgeoflink.window.interval=" + str(wInterval),
                                           "-Dgeoflink.window.step=" + str(wStep),
                                           "-Dgeoflink.window.timeUnit=" + "millis",
@@ -248,11 +242,15 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
 
         if x.status_code == 200:
             print(str(datetime.now()) + " *** Job submitted *** QueryID: " +
-                  queryID + ", inputTopicName: " + inputTopicName + ", algorithm: " + algorithm + ", WinSize: " + str(wInterval) + ", WinStep: " + str(wStep) + ", Parallelism: " + str(parallelism) + ", Threshold: " + str(threshold)
-                  + ", NumQueryTrajs: " + str(numQueryTrajectories) + ", EarlyAbandoning: " + earlyAbandoning + ", Frequency: " + str(i))
+                  queryID + ", inputTopicName: " + inputTopicName + ", algorithm: " + algorithm + ", WinSize: " + str(
+                wInterval) + ", WinStep: " + str(wStep) + ", Parallelism: " + str(parallelism) + ", Threshold: " + str(
+                threshold)
+                  + ", NumQueryTrajs: " + str(
+                numQueryTrajectories) + ", EarlyAbandoning: " + earlyAbandoning + ", Frequency: " + str(i))
             logFile.write(str(datetime.now()) + " Job submitted: " +
-                  queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(parallelism) + "," + str(threshold)
-                  + "," + str(numQueryTrajectories) + "," + earlyAbandoning + ", Frequency " + str(i) + "\n")
+                          queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(
+                wStep) + "," + str(parallelism) + "," + str(threshold)
+                          + "," + str(numQueryTrajectories) + "," + earlyAbandoning + ", Frequency " + str(i) + "\n")
         else:
             print(str(datetime.now()) + " Job could not be submitted: " + x.text)
             logFile.write(str(datetime.now()) + "Job could not be submitted: " + x.text + "\n")
@@ -281,7 +279,8 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
         for vertex in jsonTxt["vertices"]:
             actualExecutionDuration = json.dumps(vertex['duration'], indent=4)
 
-        if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (executionTimeSeconds * 1000 - 1000):
+        if str(json.dumps(y.json()['state'], indent=4)).strip('\"') == "FAILED" or int(actualExecutionDuration) < (
+                executionTimeSeconds * 1000 - 1000):
             print("EXECUTION TIME INSUFFICIENT")
             time.sleep(waitBetweenExecutionsSec)
             subprocess.Popen("./../flinkBinaries/flink-1.16.0/bin/stop-cluster.sh",
@@ -337,23 +336,32 @@ def executeAndSaveLatency(queryID, inputTopicName, outputTopicName, k, wInterval
 
     for j in range(len(vertexNameList)):
         if j != len(vertexNameList) - 1:
-            vertexName = vertexName + str(vertexNameList[j].replace(',', '-')) + ","
-            execDuration = execDuration + str(execDurationList[j]) + ","
-            readRecords = readRecords + str(readRecordsList[j]) + ","
-            writeRecords = writeRecords + str(writeRecordsList[j]) + ","
+            vertexName = vertexName + str(vertexNameList[j].replace(',', '-')) + ", execDuration, " + execDuration + str(execDurationList[j]) + ", readRecords, " + readRecords + str(readRecordsList[j]) + ", writeRecords, " + writeRecords + str(writeRecordsList[j]) + ","
         else:
-            vertexName = vertexName + str(vertexNameList[j].replace(',', '-'))
-            execDuration = execDuration + str(execDurationList[j])
-            readRecords = readRecords + str(readRecordsList[j])
-            writeRecords = writeRecords + str(writeRecordsList[j])
+            vertexName = vertexName + str(vertexNameList[j].replace(',', '-')) + ", execDuration, " + execDuration + str(execDurationList[j]) + ", readRecords, " + readRecords + str(readRecordsList[j]) + ", writeRecords, " + writeRecords + str(writeRecordsList[j])
 
-    vertexStr = vertexName + ", " + execDuration + ", " + readRecords + ", " + writeRecords
+    vertexStr = vertexName
+
+    # for j in range(len(vertexNameList)):
+    #     if j != len(vertexNameList) - 1:
+    #         vertexName = vertexName + str(vertexNameList[j].replace(',', '-')) + ","
+    #         execDuration = execDuration + str(execDurationList[j]) + ","
+    #         readRecords = readRecords + str(readRecordsList[j]) + ","
+    #         writeRecords = writeRecords + str(writeRecordsList[j]) + ","
+    #     else:
+    #         vertexName = vertexName + str(vertexNameList[j].replace(',', '-'))
+    #         execDuration = execDuration + str(execDurationList[j])
+    #         readRecords = readRecords + str(readRecordsList[j])
+    #         writeRecords = writeRecords + str(writeRecordsList[j])
+
+    # vertexStr = vertexName + ", " + execDuration + ", " + readRecords + ", " + writeRecords
 
     statsFile.write(
         queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(
-            parallelism) + "," + str(threshold) + "," + str(numQueryTrajectories) + "," + earlyAbandoning + "," + vertexStr + "\n")
+            parallelism) + "," + str(threshold) + "," + str(
+            numQueryTrajectories) + "," + earlyAbandoning + "," + vertexStr + "\n")
     print(queryID + "," + inputTopicName + "," + algorithm + "," + str(wInterval) + "," + str(wStep) + "," + str(
-            parallelism) + "," + str(threshold) + "," + str(numQueryTrajectories) + "," + earlyAbandoning + "," + vertexStr)
+        parallelism) + "," + str(threshold) + "," + str(numQueryTrajectories) + "," + earlyAbandoning + "," + vertexStr)
 
     statsFile.flush()
     statsFile.close()
